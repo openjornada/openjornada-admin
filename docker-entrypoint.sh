@@ -1,6 +1,9 @@
 #!/bin/sh
 # Runtime environment variable replacement for Next.js
 # Replaces __PLACEHOLDER__ values with actual environment variables
+#
+# NOTE: NEXT_PUBLIC_BASE_PATH is NOT replaceable at runtime because
+# Next.js validates it at build time (must start with /)
 
 set -e
 
@@ -21,7 +24,6 @@ replace_placeholder() {
 replace_placeholder "__NEXT_PUBLIC_API_URL__" "${NEXT_PUBLIC_API_URL:-}"
 replace_placeholder "__NEXT_PUBLIC_APP_NAME__" "${NEXT_PUBLIC_APP_NAME:-OpenTracker}"
 replace_placeholder "__NEXT_PUBLIC_APP_LOGO__" "${NEXT_PUBLIC_APP_LOGO:-/logo.png}"
-replace_placeholder "__NEXT_PUBLIC_BASE_PATH__" "${NEXT_PUBLIC_BASE_PATH:-}"
 
 echo "Environment variables injected successfully"
 

@@ -3,7 +3,8 @@
 # Se ejecuta automáticamente cuando se crea una nueva release
 #
 # La imagen usa placeholders que se reemplazan en runtime via docker-entrypoint.sh
-# Variables configurables: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_NAME, NEXT_PUBLIC_APP_LOGO, NEXT_PUBLIC_BASE_PATH
+# Variables runtime: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_NAME, NEXT_PUBLIC_APP_LOGO
+# Variable build-time: NEXT_PUBLIC_BASE_PATH (Next.js requiere que sea válido en build)
 #
 # Usa matrix strategy con runners nativos para builds multi-plataforma rápidos:
 # - linux/amd64 se construye en ubuntu-latest (x86)
@@ -76,6 +77,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=build-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=build-${{ env.PLATFORM_PAIR }}
+          build-args: |
+            NEXT_PUBLIC_BASE_PATH=${{ vars.NEXT_PUBLIC_BASE_PATH || '' }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

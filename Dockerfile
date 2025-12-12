@@ -12,12 +12,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build with PLACEHOLDER values that will be replaced at runtime
-# This allows the same image to be used in different environments
+# basePath MUST be set at build time (Next.js validates it must start with /)
+# Use empty string for root path or "/admin" for subpath
+ARG NEXT_PUBLIC_BASE_PATH=""
+
+# Build with PLACEHOLDER values for runtime-configurable vars
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
 ENV NEXT_PUBLIC_APP_NAME=__NEXT_PUBLIC_APP_NAME__
 ENV NEXT_PUBLIC_APP_LOGO=__NEXT_PUBLIC_APP_LOGO__
-ENV NEXT_PUBLIC_BASE_PATH=__NEXT_PUBLIC_BASE_PATH__
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 
 # Build the application
 RUN npm run build
@@ -62,7 +65,6 @@ ENV HOSTNAME="0.0.0.0"
 ENV NEXT_PUBLIC_API_URL=""
 ENV NEXT_PUBLIC_APP_NAME="OpenTracker"
 ENV NEXT_PUBLIC_APP_LOGO="/logo.png"
-ENV NEXT_PUBLIC_BASE_PATH=""
 
 # Use entrypoint to replace placeholders at runtime
 ENTRYPOINT ["/docker-entrypoint.sh"]
