@@ -14,9 +14,10 @@ replace_placeholder() {
 
     if [ -n "$value" ]; then
         echo "Replacing $placeholder with runtime value"
-        # Replace in all JS files (static chunks and server)
-        find /app/.next -type f -name "*.js" -exec sed -i "s|$placeholder|$value|g" {} + 2>/dev/null || true
-        find /app/.next -type f -name "*.json" -exec sed -i "s|$placeholder|$value|g" {} + 2>/dev/null || true
+        # Replace in all relevant files (JS, JSON, HTML, and RSC payloads)
+        find /app/.next -type f \( -name "*.js" -o -name "*.json" -o -name "*.html" -o -name "*.rsc" \) -exec sed -i "s|$placeholder|$value|g" {} + 2>/dev/null || true
+        # Also replace in the server directory specifically (for SSR)
+        find /app/.next/server -type f -exec sed -i "s|$placeholder|$value|g" {} + 2>/dev/null || true
     fi
 }
 
