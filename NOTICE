@@ -1,0 +1,135 @@
+OpenTracker Frontend Component
+Copyright (C) 2024 OpenTracker Contributors
+
+This component is part of the OpenTracker project:
+https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENTRACKER
+
+This software is licensed under the GNU Affero General Public License v3.0.
+See the LICENSE file for the full license text.
+
+===============================================================================
+
+Component Information
+===============================================================================
+
+Component: opentracker-admin
+- opentracker-admin: Admin Panel (Next.js)
+- opentracker-webapp: Worker Web App (React + Vite)
+- opentracker-landing: Landing Page
+- opentracker-saas-portal: SaaS Registration Portal
+
+Language: TypeScript/JavaScript
+Framework: React / Next.js / Vite
+
+This component provides the user interface for OpenTracker's time tracking system.
+
+===============================================================================
+
+AGPL-3.0 License Notice
+===============================================================================
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+===============================================================================
+
+Network Use Provision (AGPL-3.0 Specific)
+===============================================================================
+
+If you run a modified version of this application on a server and let other
+users access it through a network, your server must also allow them to
+download the source code corresponding to the modified version running there.
+
+This means that if you use this component as part of a SaaS offering, you must
+provide access to the source code, including any modifications you have made.
+
+===============================================================================
+
+Third-Party Dependencies (Frontend)
+===============================================================================
+
+This component includes or depends on the following open-source libraries:
+
+Core Framework:
+- React (18.2.0) - MIT License
+  https://github.com/facebook/react
+- Next.js (14.0.0) - MIT License (for Admin/Portal)
+  https://github.com/vercel/next.js
+- Vite (5.0.0) - MIT License (for Webapp/Landing)
+  https://github.com/vitejs/vite
+
+TypeScript:
+- TypeScript (5.3.2) - Apache License 2.0
+  https://github.com/microsoft/TypeScript
+
+Styling:
+- Tailwind CSS (3.3.5) - MIT License
+  https://github.com/tailwindlabs/tailwindcss
+- PostCSS (8.4.31) - MIT License
+  https://github.com/postcss/postcss
+
+HTTP Client:
+- Axios (1.6.0) - MIT License
+  https://github.com/axios/axios
+
+UI Components & Utilities:
+- React Hot Toast (2.4.1) - MIT License
+  https://github.com/timolins/react-hot-toast
+- React Icons (4.11.0) - MIT License
+  https://github.com/react-icons/react-icons
+- Lucide React (0.292.0) - ISC License
+  https://github.com/lucide-icons/lucide
+
+Routing:
+- React Router DOM (6.18.0) - MIT License (for Vite apps)
+  https://github.com/remix-run/react-router
+
+Build Tools:
+- ESLint (8.53.0) - MIT License
+  https://github.com/eslint/eslint
+- Prettier (3.1.0) - MIT License (if used)
+  https://github.com/prettier/prettier
+
+All third-party licenses are compatible with AGPL-3.0 and are included
+in their respective dependency packages.
+
+===============================================================================
+
+Contributing
+===============================================================================
+
+By contributing to this OpenTracker frontend component, you agree that your
+contributions will be licensed under the AGPL-3.0 license.
+
+See CONTRIBUTING.md for contribution guidelines specific to this component.
+
+For general project contribution guidelines, see:
+https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/src/main/CONTRIBUTING.md
+
+===============================================================================
+
+Contact & Support
+===============================================================================
+
+For issues specific to this frontend component:
+https://bitbucket.org/[YOUR-WORKSPACE]/[REPO-NAME]/issues
+
+For general project issues and documentation:
+https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/issues
+
+For commercial support and consulting services:
+[YOUR CONTACT EMAIL]
+
+===============================================================================
+
+Last Updated: 2024-11-07
