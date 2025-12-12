@@ -2,6 +2,9 @@
 # Este workflow construye y publica la imagen Docker en GitHub Container Registry
 # Se ejecuta automáticamente cuando se crea una nueva release
 #
+# La imagen usa placeholders que se reemplazan en runtime via docker-entrypoint.sh
+# Variables configurables: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_APP_NAME, NEXT_PUBLIC_APP_LOGO, NEXT_PUBLIC_BASE_PATH
+#
 # Usa matrix strategy con runners nativos para builds multi-plataforma rápidos:
 # - linux/amd64 se construye en ubuntu-latest (x86)
 # - linux/arm64 se construye en ubuntu-24.04-arm (ARM nativo)
@@ -73,10 +76,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=build-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=build-${{ env.PLATFORM_PAIR }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.opentracker.es' }}
-            NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'OpenTracker Admin' }}
-            NEXT_PUBLIC_BASE_PATH=${{ vars.NEXT_PUBLIC_BASE_PATH || '' }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

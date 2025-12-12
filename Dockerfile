@@ -12,15 +12,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build arguments for environment variables
-ARG NEXT_PUBLIC_API_URL=https://jornada.codefriends.es/api
-ARG NEXT_PUBLIC_APP_NAME="OpenTracker Admin"
-ARG NEXT_PUBLIC_BASE_PATH=""
-
-# Set environment variables for build
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
-ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+# Build with PLACEHOLDER values that will be replaced at runtime
+# This allows the same image to be used in different environments
+ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
+ENV NEXT_PUBLIC_APP_NAME=__NEXT_PUBLIC_APP_NAME__
+ENV NEXT_PUBLIC_APP_LOGO=__NEXT_PUBLIC_APP_LOGO__
+ENV NEXT_PUBLIC_BASE_PATH=__NEXT_PUBLIC_BASE_PATH__
 
 # Build the application
 RUN npm run build
@@ -37,13 +34,19 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy public folder (Next.js will serve static files from here)
-# Note: .gitkeep ensures directory is not empty for Docker COPY
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Copy public folder
+COPY --from=builder /app/public ./public
 
 # Copy standalone build
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Change ownership after copying everything
+RUN chown -R nextjs:nodejs /app
 
 # Switch to non-root user
 USER nextjs
@@ -55,5 +58,12 @@ EXPOSE 3001
 ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
+# Default values for runtime (can be overridden)
+ENV NEXT_PUBLIC_API_URL=""
+ENV NEXT_PUBLIC_APP_NAME="OpenTracker"
+ENV NEXT_PUBLIC_APP_LOGO="/logo.png"
+ENV NEXT_PUBLIC_BASE_PATH=""
+
+# Use entrypoint to replace placeholders at runtime
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "server.js"]
