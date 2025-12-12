@@ -218,7 +218,7 @@ class ApiClient {
         if (error.response?.status === 401 && !error.config?.url?.includes("/api/token")) {
           this.clearToken();
           if (typeof window !== "undefined") {
-            window.location.href = "/login";
+            window.location.href = `${appConfig.basePath}/login`;
           }
         }
         return Promise.reject(error);
@@ -277,7 +277,7 @@ class ApiClient {
   logout() {
     this.clearToken();
     if (typeof window !== "undefined") {
-      window.location.href = "/login";
+      window.location.href = `${appConfig.basePath}/login`;
     }
   }
 
