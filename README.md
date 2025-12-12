@@ -66,6 +66,20 @@ La aplicación estará disponible en `http://localhost:3001`
 - `npm start` - Inicia la aplicación en modo producción
 - `npm run lint` - Ejecuta el linter
 
+## 🐳 Imagen Docker
+
+La imagen oficial está disponible en GitHub Container Registry:
+
+```bash
+# Última versión
+docker pull ghcr.io/opentracker-es/opentracker-admin:latest
+
+# Versión específica
+docker pull ghcr.io/opentracker-es/opentracker-admin:1.0.0
+```
+
+**Plataformas soportadas:** linux/amd64, linux/arm64
+
 ## Despliegue con Docker
 
 Para desplegar en producción con Docker:
