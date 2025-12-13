@@ -427,6 +427,28 @@ export default function ChangeRequestDetailPage() {
                         </label>
                         <p className="text-foreground text-sm">{changeRequest.reviewed_by_admin_email}</p>
                       </div>
+
+                      {changeRequest.admin_internal_notes && (
+                        <div>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            Notas internas
+                          </label>
+                          <div className="bg-muted/30 rounded-lg p-3 text-foreground text-sm whitespace-pre-wrap">
+                            {changeRequest.admin_internal_notes}
+                          </div>
+                        </div>
+                      )}
+
+                      {changeRequest.admin_public_comment && (
+                        <div>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">
+                            Comentario público
+                          </label>
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-foreground text-sm whitespace-pre-wrap">
+                            {changeRequest.admin_public_comment}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

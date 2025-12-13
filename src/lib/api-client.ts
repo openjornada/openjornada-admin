@@ -160,6 +160,7 @@ interface ChangeRequest {
   reviewed_by_admin_id?: string;
   reviewed_by_admin_email?: string;
   reviewed_at?: string;
+  admin_internal_notes?: string;
   admin_public_comment?: string;
   validation_errors?: string[];
 }
