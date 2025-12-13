@@ -103,13 +103,119 @@ interface UpdateIncidentData {
   admin_notes?: string;
 }
 
+// Backup configuration types
+interface BackupSchedule {
+  frequency: "daily" | "weekly" | "monthly";
+  time: string;
+  day_of_week?: number;
+  day_of_month?: number;
+}
+
+interface S3ConfigInput {
+  endpoint_url: string;
+  bucket_name: string;
+  access_key_id: string;
+  secret_access_key: string;
+  region?: string;
+}
+
+interface SFTPConfigInput {
+  host: string;
+  port?: number;
+  username: string;
+  password: string;
+  remote_path?: string;
+}
+
+interface LocalConfig {
+  path: string;
+}
+
+interface BackupConfigInput {
+  enabled: boolean;
+  schedule?: BackupSchedule;
+  retention_days: number;
+  storage_type: "s3" | "sftp" | "local";
+  s3_config?: S3ConfigInput;
+  sftp_config?: SFTPConfigInput;
+  local_config?: LocalConfig;
+}
+
+interface BackupConfigResponse {
+  enabled: boolean;
+  schedule?: BackupSchedule;
+  retention_days: number;
+  storage_type: "s3" | "sftp" | "local";
+  s3_configured: boolean;
+  s3_endpoint?: string;
+  s3_bucket?: string;
+  sftp_configured: boolean;
+  sftp_host?: string;
+  sftp_path?: string;
+  local_configured: boolean;
+  local_path?: string;
+}
+
+interface Backup {
+  id: string;
+  filename: string;
+  storage_path: string;
+  storage_type: "s3" | "sftp" | "local";
+  size_bytes: number;
+  size_human: string;
+  created_at: string;
+  completed_at?: string;
+  duration_seconds?: number;
+  status: "in_progress" | "completed" | "failed";
+  trigger: "scheduled" | "manual" | "pre_restore";
+  error_message?: string;
+  collections_count?: number;
+  documents_count?: number;
+  checksum_sha256?: string;
+}
+
+interface BackupListResponse {
+  backups: Backup[];
+  total_count: number;
+  total_size_bytes: number;
+  total_size_human: string;
+}
+
+interface RestoreResponse {
+  status: "success" | "failed";
+  message: string;
+  pre_restore_backup_id?: string;
+}
+
+interface TestConnectionRequest {
+  storage_type: "s3" | "sftp" | "local";
+  s3_endpoint_url?: string;
+  s3_bucket_name?: string;
+  s3_access_key_id?: string;
+  s3_secret_access_key?: string;
+  s3_region?: string;
+  sftp_host?: string;
+  sftp_port?: number;
+  sftp_username?: string;
+  sftp_password?: string;
+  sftp_remote_path?: string;
+  local_path?: string;
+}
+
+interface TestConnectionResponse {
+  success: boolean;
+  message: string;
+}
+
 interface Settings {
   id: string;
   contact_email: string;
+  backup_config?: BackupConfigResponse;
 }
 
 interface UpdateSettingsData {
   contact_email?: string;
+  backup_config?: BackupConfigInput;
 }
 
 interface PauseType {
@@ -447,6 +553,64 @@ class ApiClient {
     });
     return response.data;
   }
+
+  // Backup endpoints
+  async getBackups(): Promise<BackupListResponse> {
+    const response = await this.client.get<BackupListResponse>("/api/backups/");
+    return response.data;
+  }
+
+  async getBackup(id: string): Promise<Backup> {
+    const response = await this.client.get<Backup>(`/api/backups/${id}`);
+    return response.data;
+  }
+
+  async triggerBackup(): Promise<Backup> {
+    const response = await this.client.post<Backup>("/api/backups/trigger");
+    return response.data;
+  }
+
+  async deleteBackup(id: string): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/api/backups/${id}`);
+    return response.data;
+  }
+
+  async restoreBackup(id: string): Promise<RestoreResponse> {
+    const response = await this.client.post<RestoreResponse>(`/api/backups/${id}/restore`, { confirm: true });
+    return response.data;
+  }
+
+  async getBackupDownloadUrl(id: string): Promise<{ download_url: string; expires_in: number | null; storage_type: string }> {
+    const response = await this.client.get(`/api/backups/${id}/download-url`);
+    return response.data;
+  }
+
+  async downloadBackup(id: string, filename: string): Promise<void> {
+    const response = await this.client.get(`/api/backups/${id}/download`, {
+      responseType: 'blob'
+    });
+
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data], { type: 'application/gzip' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async testBackupConnection(data: TestConnectionRequest): Promise<TestConnectionResponse> {
+    const response = await this.client.post<TestConnectionResponse>("/api/backups/test-connection", data);
+    return response.data;
+  }
+
+  async getBackupScheduleStatus(): Promise<{ scheduled: boolean; next_run: string | null }> {
+    const response = await this.client.get("/api/backups/schedule/status");
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -469,5 +633,16 @@ export type {
   CreatePauseTypeData,
   UpdatePauseTypeData,
   ChangeRequest,
-  UpdateChangeRequestData
+  UpdateChangeRequestData,
+  BackupSchedule,
+  S3ConfigInput,
+  SFTPConfigInput,
+  LocalConfig,
+  BackupConfigInput,
+  BackupConfigResponse,
+  Backup,
+  BackupListResponse,
+  RestoreResponse,
+  TestConnectionRequest,
+  TestConnectionResponse
 };

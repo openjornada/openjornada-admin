@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 
@@ -160,6 +160,20 @@ export default function Sidebar() {
               >
                 <AiOutlineSafety className="text-xl" />
                 <span>Gestión RGPD</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/backups"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive("/backups")
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineCloudServer className="text-xl" />
+                <span>Backups</span>
               </Link>
             </li>
 
