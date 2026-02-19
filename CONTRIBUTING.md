@@ -1,15 +1,15 @@
-# Contributing to OpenTracker Frontend
+# Contributing to OpenJornada Frontend
 
-Thank you for your interest in contributing to this OpenTracker frontend component!
+Thank you for your interest in contributing to this OpenJornada frontend component!
 
-> **Note**: This is part of the [OpenTracker Project](https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENTRACKER).
-> For general project information and documentation, see [opentracker-core](https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core).
+> **Note**: This is part of the [OpenJornada Project](https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENJORNADA).
+> For general project information and documentation, see [openjornada-core](https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core).
 
 ## 📋 Quick Links
 
-- [Main Project Documentation](https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/src/main/docs/)
-- [General Contributing Guidelines](https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/src/main/CONTRIBUTING.md)
-- [Architecture Documentation](https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/src/main/docs/ARCHITECTURE.md)
+- [Main Project Documentation](https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/src/main/docs/)
+- [General Contributing Guidelines](https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/src/main/CONTRIBUTING.md)
+- [Architecture Documentation](https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/src/main/docs/ARCHITECTURE.md)
 
 ## 🚀 Development Setup
 
@@ -263,7 +263,7 @@ npm run test:coverage  # With coverage
 
 ## ⚖️ License Agreement
 
-By contributing to this OpenTracker component, you agree that:
+By contributing to this OpenJornada component, you agree that:
 
 1. Your contributions will be licensed under **AGPL-3.0**
 2. You have the right to contribute the code
@@ -271,8 +271,8 @@ By contributing to this OpenTracker component, you agree that:
 
 ```typescript
 /*
- * OpenTracker - Sistema de Registro de Jornada Laboral
- * Copyright (C) 2024 OpenTracker Contributors
+ * OpenJornada - Sistema de Registro de Jornada Laboral
+ * Copyright (C) 2024 HappyAndroids (https://happyandroids.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -325,7 +325,7 @@ By contributing to this OpenTracker component, you agree that:
 
 ---
 
-Thank you for contributing to OpenTracker! 🚀
+Thank you for contributing to OpenJornada! 🚀
 
 For questions specific to this component, open an issue in this repository.
-For general project questions, see [opentracker-core](https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core).
+For general project questions, see [openjornada-core](https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core).

@@ -10,7 +10,7 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-OpenTracker}
+      - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-OpenJornada}
       - NEXT_PUBLIC_APP_LOGO=${NEXT_PUBLIC_APP_LOGO:-/logo.png}
     restart: unless-stopped
     deploy:

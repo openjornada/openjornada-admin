@@ -63,7 +63,7 @@ ENV HOSTNAME="0.0.0.0"
 
 # Default values for runtime (can be overridden)
 ENV NEXT_PUBLIC_API_URL=""
-ENV NEXT_PUBLIC_APP_NAME="OpenTracker"
+ENV NEXT_PUBLIC_APP_NAME="OpenJornada"
 ENV NEXT_PUBLIC_APP_LOGO="/logo.png"
 
 # Use entrypoint to replace placeholders at runtime

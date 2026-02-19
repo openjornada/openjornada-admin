@@ -1,13 +1,17 @@
 {
-  "name": "opentracker-admin",
+  "name": "openjornada-admin",
   "version": "1.0.0",
-  "description": "OpenTracker Admin Panel - Sistema de Registro de Jornada Laboral",
+  "description": "OpenJornada Admin Panel - Sistema de Registro de Jornada Laboral",
   "license": "AGPL-3.0",
-  "author": "OpenTracker Contributors",
+  "author": {
+    "name": "HappyAndroids",
+    "url": "https://happyandroids.com"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/[YOUR-ORG]/opentracker"
+    "url": "https://github.com/openjornada/openjornada-admin"
   },
+  "homepage": "https://www.openjornada.es",
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",

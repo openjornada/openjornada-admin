@@ -23,7 +23,7 @@ replace_placeholder() {
 
 # Replace all placeholders with runtime environment variables
 replace_placeholder "__NEXT_PUBLIC_API_URL__" "${NEXT_PUBLIC_API_URL:-}"
-replace_placeholder "__NEXT_PUBLIC_APP_NAME__" "${NEXT_PUBLIC_APP_NAME:-OpenTracker}"
+replace_placeholder "__NEXT_PUBLIC_APP_NAME__" "${NEXT_PUBLIC_APP_NAME:-OpenJornada}"
 replace_placeholder "__NEXT_PUBLIC_APP_LOGO__" "${NEXT_PUBLIC_APP_LOGO:-/logo.png}"
 
 echo "Environment variables injected successfully"

@@ -1,7 +1,7 @@
 {
-  "name": "OpenTracker Admin",
+  "name": "OpenJornada Admin",
   "short_name": "OT Admin",
-  "description": "Panel de administración de OpenTracker",
+  "description": "Panel de administración de OpenJornada",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

@@ -1,4 +1,4 @@
-# OpenTracker Admin - Docker Image Build & Publish
+# OpenJornada Admin - Docker Image Build & Publish
 # Este workflow construye y publica la imagen Docker en GitHub Container Registry
 # Se ejecuta automáticamente cuando se crea una nueva release
 #

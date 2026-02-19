@@ -163,6 +163,20 @@ export default function Sidebar() {
               </Link>
             </li>
 
+            <li>
+              <Link
+                href="/backups"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive("/backups")
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineCloudServer className="text-xl" />
+                <span>Backups</span>
+              </Link>
+            </li>
+
             {/* Cumplimiento */}
             <li className="pt-4 mt-4 border-t border-sidebar-border">
               <span className="px-3 text-xs font-semibold uppercase text-sidebar-foreground/40 tracking-wider">

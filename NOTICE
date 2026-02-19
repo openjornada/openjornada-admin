@@ -1,8 +1,8 @@
-OpenTracker Frontend Component
-Copyright (C) 2024 OpenTracker Contributors
+OpenJornada Frontend Component
+Copyright (C) 2024 OpenJornada Contributors
 
-This component is part of the OpenTracker project:
-https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENTRACKER
+This component is part of the OpenJornada project:
+https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENJORNADA
 
 This software is licensed under the GNU Affero General Public License v3.0.
 See the LICENSE file for the full license text.
@@ -12,16 +12,16 @@ See the LICENSE file for the full license text.
 Component Information
 ===============================================================================
 
-Component: opentracker-admin
-- opentracker-admin: Admin Panel (Next.js)
-- opentracker-webapp: Worker Web App (React + Vite)
-- opentracker-landing: Landing Page
-- opentracker-saas-portal: SaaS Registration Portal
+Component: openjornada-admin
+- openjornada-admin: Admin Panel (Next.js)
+- openjornada-webapp: Worker Web App (React + Vite)
+- openjornada-landing: Landing Page
+- openjornada-saas-portal: SaaS Registration Portal
 
 Language: TypeScript/JavaScript
 Framework: React / Next.js / Vite
 
-This component provides the user interface for OpenTracker's time tracking system.
+This component provides the user interface for OpenJornada's time tracking system.
 
 ===============================================================================
 
@@ -108,13 +108,13 @@ in their respective dependency packages.
 Contributing
 ===============================================================================
 
-By contributing to this OpenTracker frontend component, you agree that your
+By contributing to this OpenJornada frontend component, you agree that your
 contributions will be licensed under the AGPL-3.0 license.
 
 See CONTRIBUTING.md for contribution guidelines specific to this component.
 
 For general project contribution guidelines, see:
-https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/src/main/CONTRIBUTING.md
+https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/src/main/CONTRIBUTING.md
 
 ===============================================================================
 
@@ -125,7 +125,7 @@ For issues specific to this frontend component:
 https://bitbucket.org/[YOUR-WORKSPACE]/[REPO-NAME]/issues
 
 For general project issues and documentation:
-https://bitbucket.org/[YOUR-WORKSPACE]/opentracker-core/issues
+https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/issues
 
 For commercial support and consulting services:
 [YOUR CONTACT EMAIL]

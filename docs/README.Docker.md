@@ -1,6 +1,6 @@
-# OpenTracker Admin - Docker Production Setup
+# OpenJornada Admin - Docker Production Setup
 
-This document explains how to build and run the OpenTracker Admin panel in production using Docker.
+This document explains how to build and run the OpenJornada Admin panel in production using Docker.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ Edit `.env.production` with your production values:
 
 ```env
 NEXT_PUBLIC_API_URL=http://your-api-domain.com
-NEXT_PUBLIC_APP_NAME=OpenTracker
+NEXT_PUBLIC_APP_NAME=OpenJornada
 NEXT_PUBLIC_APP_LOGO=/logo.png
 ```
 
@@ -44,24 +44,24 @@ docker-compose -f docker-compose.prod.yml down
 
 ```bash
 # Build the image
-docker build -t opentracker-admin:latest .
+docker build -t openjornada-admin:latest .
 
 # Run the container
 docker run -d \
-  --name opentracker-admin \
+  --name openjornada-admin \
   -p 3001:3001 \
   -e NEXT_PUBLIC_API_URL=http://your-api-domain.com \
-  -e NEXT_PUBLIC_APP_NAME=OpenTracker \
+  -e NEXT_PUBLIC_APP_NAME=OpenJornada \
   -e NEXT_PUBLIC_APP_LOGO=/logo.png \
   --restart unless-stopped \
-  opentracker-admin:latest
+  openjornada-admin:latest
 
 # View logs
-docker logs -f opentracker-admin
+docker logs -f openjornada-admin
 
 # Stop the container
-docker stop opentracker-admin
-docker rm opentracker-admin
+docker stop openjornada-admin
+docker rm openjornada-admin
 ```
 
 ## Configuration
@@ -70,8 +70,8 @@ docker rm opentracker-admin
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `NEXT_PUBLIC_API_URL` | URL of the OpenTracker API | `http://localhost:8000` | Yes |
-| `NEXT_PUBLIC_APP_NAME` | Application name | `OpenTracker` | No |
+| `NEXT_PUBLIC_API_URL` | URL of the OpenJornada API | `http://localhost:8000` | Yes |
+| `NEXT_PUBLIC_APP_NAME` | Application name | `OpenJornada` | No |
 | `NEXT_PUBLIC_APP_LOGO` | Path to logo image | `/logo.png` | No |
 
 ### Port Configuration
@@ -121,7 +121,7 @@ services:
 
   api:
     build:
-      context: ../opentracker-api
+      context: ../openjornada-api
       dockerfile: docker/prod/Dockerfile
     ports:
       - "8000:8000"
@@ -141,7 +141,7 @@ services:
       - "3001:3001"
     environment:
       - NEXT_PUBLIC_API_URL=http://api:8000
-      - NEXT_PUBLIC_APP_NAME=OpenTracker
+      - NEXT_PUBLIC_APP_NAME=OpenJornada
     depends_on:
       - api
     restart: unless-stopped
@@ -155,7 +155,7 @@ volumes:
 The container includes a healthcheck that verifies the Next.js server is responding. Check the health status:
 
 ```bash
-docker inspect --format='{{json .State.Health}}' opentracker-admin
+docker inspect --format='{{json .State.Health}}' openjornada-admin
 ```
 
 ## Troubleshooting
@@ -202,13 +202,13 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ### View resource usage
 
 ```bash
-docker stats opentracker-admin
+docker stats openjornada-admin
 ```
 
 ### Access container shell
 
 ```bash
-docker exec -it opentracker-admin sh
+docker exec -it openjornada-admin sh
 ```
 
 ## Performance Optimization
@@ -258,4 +258,4 @@ Always use HTTPS in production. Configure SSL/TLS at the reverse proxy level (Ng
 
 - [Next.js Docker Documentation](https://nextjs.org/docs/deployment#docker-image)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [OpenTracker Documentation](../README.md)
+- [OpenJornada Documentation](../README.md)

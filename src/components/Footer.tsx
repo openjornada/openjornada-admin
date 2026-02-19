@@ -9,7 +9,7 @@ export default function Footer() {
         </p>
         <div className="flex items-center gap-4">
           <a
-            href="https://www.opentracker.es/legal/privacidad"
+            href="https://www.openjornada.es/legal/privacidad"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
@@ -18,7 +18,7 @@ export default function Footer() {
           </a>
           <span>·</span>
           <a
-            href="https://www.opentracker.es/legal/aviso-legal"
+            href="https://www.openjornada.es/legal/aviso-legal"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
