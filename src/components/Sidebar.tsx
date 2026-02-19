@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 
@@ -160,6 +160,27 @@ export default function Sidebar() {
               >
                 <AiOutlineSafety className="text-xl" />
                 <span>Gestión RGPD</span>
+              </Link>
+            </li>
+
+            {/* Cumplimiento */}
+            <li className="pt-4 mt-4 border-t border-sidebar-border">
+              <span className="px-3 text-xs font-semibold uppercase text-sidebar-foreground/40 tracking-wider">
+                Cumplimiento
+              </span>
+            </li>
+
+            <li>
+              <Link
+                href="/reports"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive("/reports")
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineBarChart className="text-xl" />
+                <span>Informes</span>
               </Link>
             </li>
 

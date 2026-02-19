@@ -12,7 +12,7 @@ interface APIUser {
   id?: string;
   username: string;
   email: string;
-  role: "admin" | "tracker";
+  role: "admin" | "tracker" | "inspector";
   is_active: boolean;
   created_at?: string;
 }
@@ -186,6 +186,95 @@ interface GDPRExportData {
   time_records: TimeRecord[];
   incidents: Incident[];
   change_requests: ChangeRequest[];
+}
+
+// Reports types
+interface DailyWorkSummary {
+  date: string;
+  worker_id: string;
+  worker_name: string;
+  worker_id_number: string;
+  company_id: string;
+  company_name: string;
+  first_entry: string | null;
+  last_exit: string | null;
+  total_worked_minutes: number;
+  total_pause_minutes: number;
+  total_break_minutes: number;
+  records_count: number;
+  has_open_session: boolean;
+  is_modified: boolean;
+}
+
+interface WorkerMonthlySummary {
+  worker_id: string;
+  worker_name: string;
+  worker_id_number: string;
+  company_id: string;
+  company_name: string;
+  year: number;
+  month: number;
+  total_days_worked: number;
+  total_worked_minutes: number;
+  total_pause_minutes: number;
+  total_overtime_minutes: number;
+  daily_details: DailyWorkSummary[];
+  signature_status: "pending" | "signed" | "not_required";
+  signed_at: string | null;
+  generated_at: string;
+}
+
+interface CompanyMonthlySummary {
+  company_id: string;
+  company_name: string;
+  year: number;
+  month: number;
+  total_workers: number;
+  workers: WorkerMonthlySummary[];
+  generated_at: string;
+}
+
+interface WorkerOvertimeSummary {
+  worker_id: string;
+  worker_name: string;
+  worker_id_number: string;
+  total_worked_minutes: number;
+  expected_minutes: number;
+  overtime_minutes: number;
+  days_with_overtime: number;
+}
+
+interface OvertimeReport {
+  company_id: string;
+  company_name: string;
+  year: number;
+  month: number;
+  workers_with_overtime: WorkerOvertimeSummary[];
+  generated_at: string;
+}
+
+interface RecordIntegrity {
+  record_id: string;
+  integrity_hash: string;
+  computed_hash: string;
+  verified: boolean;
+}
+
+interface ReportExportParams {
+  company_id: string;
+  year: number;
+  month: number;
+  worker_id?: string;
+  format?: "csv" | "xlsx" | "pdf";
+  timezone?: string;
+}
+
+interface OvertimeExportParams {
+  company_id: string;
+  year: number;
+  month: number;
+  daily_expected_minutes?: number;
+  timezone?: string;
 }
 
 class ApiClient {
@@ -447,6 +536,144 @@ class ApiClient {
     });
     return response.data;
   }
+
+  // Backup endpoints
+  async getBackups(): Promise<BackupListResponse> {
+    const response = await this.client.get<BackupListResponse>("/api/backups/");
+    return response.data;
+  }
+
+  async getBackup(id: string): Promise<Backup> {
+    const response = await this.client.get<Backup>(`/api/backups/${id}`);
+    return response.data;
+  }
+
+  async triggerBackup(): Promise<Backup> {
+    const response = await this.client.post<Backup>("/api/backups/trigger");
+    return response.data;
+  }
+
+  async deleteBackup(id: string): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/api/backups/${id}`);
+    return response.data;
+  }
+
+  async restoreBackup(id: string): Promise<RestoreResponse> {
+    const response = await this.client.post<RestoreResponse>(`/api/backups/${id}/restore`, { confirm: true });
+    return response.data;
+  }
+
+  async getBackupDownloadUrl(id: string): Promise<{ download_url: string; expires_in: number | null; storage_type: string }> {
+    const response = await this.client.get(`/api/backups/${id}/download-url`);
+    return response.data;
+  }
+
+  async downloadBackup(id: string, filename: string): Promise<void> {
+    const response = await this.client.get(`/api/backups/${id}/download`, {
+      responseType: 'blob'
+    });
+
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data], { type: 'application/gzip' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async testBackupConnection(data: TestConnectionRequest): Promise<TestConnectionResponse> {
+    const response = await this.client.post<TestConnectionResponse>("/api/backups/test-connection", data);
+    return response.data;
+  }
+
+  // Reports endpoints
+  async getCompanyMonthlyReport(params: {
+    company_id: string;
+    year: number;
+    month: number;
+    timezone?: string;
+  }): Promise<CompanyMonthlySummary> {
+    const response = await this.client.get<CompanyMonthlySummary>("/api/reports/monthly", { params });
+    return response.data;
+  }
+
+  async getWorkerMonthlyReport(
+    workerId: string,
+    params: { company_id: string; year: number; month: number; timezone?: string }
+  ): Promise<WorkerMonthlySummary> {
+    const response = await this.client.get<WorkerMonthlySummary>(
+      `/api/reports/monthly/worker/${workerId}`,
+      { params }
+    );
+    return response.data;
+  }
+
+  async getOvertimeReport(params: {
+    company_id: string;
+    year: number;
+    month: number;
+    daily_expected_minutes?: number;
+    timezone?: string;
+  }): Promise<OvertimeReport> {
+    const response = await this.client.get<OvertimeReport>("/api/reports/overtime", { params });
+    return response.data;
+  }
+
+  async exportMonthlyReport(params: ReportExportParams): Promise<void> {
+    const response = await this.client.get("/api/reports/export/monthly", {
+      params,
+      responseType: "blob",
+    });
+
+    const contentDisposition = response.headers["content-disposition"] || "";
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    const filename = filenameMatch ? filenameMatch[1] : `informe_${params.year}-${String(params.month).padStart(2, "0")}.${params.format || "pdf"}`;
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async exportOvertimeReport(params: OvertimeExportParams): Promise<void> {
+    const response = await this.client.get("/api/reports/export/overtime", {
+      params,
+      responseType: "blob",
+    });
+
+    const contentDisposition = response.headers["content-disposition"] || "";
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    const filename = filenameMatch ? filenameMatch[1] : `horas_extra_${params.year}-${String(params.month).padStart(2, "0")}.csv`;
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async verifyRecordIntegrity(recordId: string): Promise<RecordIntegrity> {
+    const response = await this.client.get<RecordIntegrity>(`/api/reports/integrity/${recordId}`);
+    return response.data;
+  }
+
+  async getBackupScheduleStatus(): Promise<{ scheduled: boolean; next_run: string | null }> {
+    const response = await this.client.get("/api/backups/schedule/status");
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -469,5 +696,24 @@ export type {
   CreatePauseTypeData,
   UpdatePauseTypeData,
   ChangeRequest,
-  UpdateChangeRequestData
+  UpdateChangeRequestData,
+  BackupSchedule,
+  S3ConfigInput,
+  SFTPConfigInput,
+  LocalConfig,
+  BackupConfigInput,
+  BackupConfigResponse,
+  Backup,
+  BackupListResponse,
+  RestoreResponse,
+  TestConnectionRequest,
+  TestConnectionResponse,
+  DailyWorkSummary,
+  WorkerMonthlySummary,
+  CompanyMonthlySummary,
+  WorkerOvertimeSummary,
+  OvertimeReport,
+  RecordIntegrity,
+  ReportExportParams,
+  OvertimeExportParams,
 };

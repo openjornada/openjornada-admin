@@ -5,7 +5,7 @@ import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { appConfig } from "@/lib/config";
-import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle } from "react-icons/ai";
+import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart } from "react-icons/ai";
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -188,6 +188,19 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">
                   {stats.pendingChangeRequests > 0 ? 'Hay peticiones por revisar' : 'Gestionar solicitudes'}
                 </p>
+              </div>
+            </Link>
+
+            <Link
+              href="/reports"
+              className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-accent/5 hover:border-accent transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <AiOutlineBarChart className="text-xl text-accent" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Ver Informes</p>
+                <p className="text-sm text-muted-foreground">Informes de jornada y cumplimiento</p>
               </div>
             </Link>
           </div>

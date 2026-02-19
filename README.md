@@ -11,6 +11,11 @@ Panel de administración web para OpenTracker - Sistema de gestión de registros
   - Eliminar trabajadores (eliminación lógica)
 - **Visualización de registros**: Ver todos los registros de entrada/salida con filtros por fecha
 - **Dashboard**: Estadísticas y accesos rápidos a funcionalidades principales
+- **Informes y cumplimiento**: Informes mensuales, exportación (CSV/XLSX/PDF) y firmas
+  - Informe mensual por trabajador con desglose diario
+  - Informe mensual por empresa con resumen por trabajador
+  - Estado de firmas mensuales de los trabajadores
+  - Exportación a CSV, Excel y PDF para Inspección de Trabajo
 
 ## Tecnologías
 
@@ -152,9 +157,18 @@ opentracker-admin/
 │   │   │   ├── new/         # Crear trabajador
 │   │   │   └── [id]/edit/   # Editar trabajador
 │   │   ├── time-records/    # Visualización de registros
+│   │   ├── reports/         # Informes y cumplimiento
+│   │   │   ├── page.tsx     # Hub de informes
+│   │   │   ├── workers/     # Informe mensual por trabajador
+│   │   │   ├── companies/   # Informe mensual por empresa
+│   │   │   └── signatures/  # Estado de firmas mensuales
 │   │   ├── layout.tsx       # Layout principal
 │   │   └── page.tsx         # Dashboard
 │   ├── components/          # Componentes reutilizables
+│   │   ├── reports/         # Componentes de informes
+│   │   │   ├── StatCard.tsx        # Tarjeta KPI (default/warning/success)
+│   │   │   ├── ReportFilters.tsx   # Filtros: empresa, año, mes, trabajador
+│   │   │   └── ExportButtons.tsx   # Botones de exportación CSV/XLSX/PDF
 │   │   ├── AppWrapper.tsx   # Wrapper con sidebar, topnav, footer
 │   │   ├── Sidebar.tsx      # Barra lateral de navegación
 │   │   ├── TopNav.tsx       # Barra superior
@@ -162,8 +176,11 @@ opentracker-admin/
 │   │   └── ProtectedRoute.tsx # HOC para rutas protegidas
 │   ├── contexts/            # Contextos de React
 │   │   └── AuthContext.tsx  # Context de autenticación
-│   └── lib/                 # Utilidades
-│       └── api-client.ts    # Cliente HTTP para la API
+│   ├── utils/               # Utilidades
+│   │   └── dateFormatters.ts # Formateo de fechas y zonas horarias
+│   └── lib/                 # Configuración
+│       ├── api-client.ts    # Cliente HTTP para la API
+│       └── config.ts        # Configuración de la aplicación
 ├── public/                  # Archivos estáticos
 ├── .env.example             # Ejemplo de variables de entorno
 └── package.json
@@ -174,7 +191,7 @@ opentracker-admin/
 El sistema de autenticación funciona de la siguiente manera:
 
 1. Usuario ingresa credenciales en `/login`
-2. Se valida que el usuario tenga rol "admin"
+2. Se valida que el usuario tenga rol "admin" o "inspector"
 3. Se almacena el token JWT en localStorage
 4. Todas las rutas (excepto /login) están protegidas
 5. El token se incluye automáticamente en todas las peticiones a la API
@@ -224,6 +241,10 @@ El diseño utiliza los mismos colores que la landing page de OpenTracker:
 - `DELETE /api/workers/{id}` - Eliminar trabajador (soft delete)
 - `GET /api/time-records/` - Listar registros
 - `GET /api/time-records/worker/{id}` - Registros por trabajador
+- `GET /api/reports/monthly` - Informe mensual de empresa
+- `GET /api/reports/monthly/worker/{id}` - Informe mensual de trabajador
+- `GET /api/reports/export/monthly` - Exportar informe mensual (CSV/XLSX/PDF)
+- `GET /api/reports/integrity/{id}` - Verificar integridad de un registro
 
 ## Desarrollo
 
