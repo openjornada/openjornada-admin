@@ -285,9 +285,6 @@ export default function TimeRecordsPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      DNI
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Trabajador
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -310,9 +307,6 @@ export default function TimeRecordsPage() {
                 <tbody className="bg-card divide-y divide-border">
                   {filteredRecords.map((record) => (
                     <tr key={record.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                        {record.worker_id_number}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {record.worker_name}
                       </td>
