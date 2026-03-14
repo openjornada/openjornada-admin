@@ -20,12 +20,9 @@ export default function SmsCreditsBadge({ balance, currency = "EUR", unlimited }
   let className = "";
   let label = "";
 
-  if (balance <= 0) {
+  if (balance < 5) {
     className = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    label = "Sin créditos";
-  } else if (balance < 5) {
-    className = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    label = `${balance.toFixed(2)} ${currency}`;
+    label = balance <= 0 ? "Sin créditos" : `${balance.toFixed(2)} ${currency}`;
   } else if (balance < 20) {
     className = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
     label = `${balance.toFixed(2)} ${currency}`;

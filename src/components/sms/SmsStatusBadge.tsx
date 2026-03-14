@@ -1,7 +1,7 @@
 "use client";
 
 interface SmsStatusBadgeProps {
-  status: "pending" | "sent" | "delivered" | "failed";
+  status: string;
 }
 
 const statusConfig = {
@@ -24,7 +24,15 @@ const statusConfig = {
 };
 
 export default function SmsStatusBadge({ status }: SmsStatusBadgeProps) {
-  const config = statusConfig[status] ?? statusConfig.pending;
+  const config = statusConfig[status as keyof typeof statusConfig];
+
+  if (!config) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+        {status}
+      </span>
+    );
+  }
 
   return (
     <span

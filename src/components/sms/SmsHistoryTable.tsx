@@ -4,25 +4,15 @@ import Link from "next/link";
 import { AiOutlineMessage } from "react-icons/ai";
 import SmsStatusBadge from "./SmsStatusBadge";
 import type { SmsMessage } from "@/lib/api-client";
+import { formatSmsDate, maskPhoneNumber } from "@/lib/sms-utils";
 
 interface SmsHistoryTableProps {
   messages: SmsMessage[];
   loading?: boolean;
   compact?: boolean;
-  workerId?: string;
 }
 
 export default function SmsHistoryTable({ messages, loading = false, compact = false }: SmsHistoryTableProps) {
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   if (loading) {
     return (
       <div className="p-8 text-center">
@@ -80,7 +70,7 @@ export default function SmsHistoryTable({ messages, loading = false, compact = f
               {!compact && (
                 <>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    {msg.sent_at ? formatDate(msg.sent_at) : "-"}
+                    {msg.sent_at ? formatSmsDate(msg.sent_at) : "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     <div>{msg.worker_name}</div>
@@ -90,11 +80,11 @@ export default function SmsHistoryTable({ messages, loading = false, compact = f
               )}
               {compact && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                  {msg.sent_at ? formatDate(msg.sent_at) : "-"}
+                  {msg.sent_at ? formatSmsDate(msg.sent_at) : "-"}
                 </td>
               )}
               <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                {msg.phone_number}
+                {maskPhoneNumber(msg.phone_number)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <SmsStatusBadge status={msg.status} />

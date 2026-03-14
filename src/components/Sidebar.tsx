@@ -184,6 +184,7 @@ export default function Sidebar() {
               </span>
             </li>
 
+            {/* Exact match: isActive("/sms") would also highlight when on /sms/history */}
             <li>
               <Link
                 href="/sms"

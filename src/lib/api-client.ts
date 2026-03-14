@@ -885,7 +885,9 @@ class ApiClient {
   }
 
   async clearSmsHistory(): Promise<{ deleted: number }> {
-    const response = await this.client.delete<{ deleted: number }>("/api/sms/history");
+    const response = await this.client.delete<{ deleted: number }>("/api/sms/history", {
+      params: { confirm: true },
+    });
     return response.data;
   }
 

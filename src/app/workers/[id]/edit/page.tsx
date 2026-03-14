@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
@@ -36,6 +36,12 @@ export default function EditWorkerPage() {
   const [showSmsModal, setShowSmsModal] = useState(false);
   const [smsText, setSmsText] = useState("");
   const [sendingSms, setSendingSms] = useState(false);
+
+  const smsModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showSmsModal) smsModalRef.current?.focus();
+  }, [showSmsModal]);
 
   const loadCompanies = async () => {
     try {
@@ -341,6 +347,27 @@ export default function EditWorkerPage() {
               </p>
             </div>
 
+            {/* SMS toggle — last field inside the form */}
+            <div className="border-t border-border pt-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="sms_enabled"
+                  checked={smsEnabled}
+                  onChange={(e) => setSmsEnabled(e.target.checked)}
+                  className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
+                  disabled={saving}
+                />
+                <label htmlFor="sms_enabled" className="text-sm font-medium text-foreground">
+                  Activar recordatorios SMS para este trabajador
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se utilizará el número de teléfono del trabajador para enviar los SMS.
+                Si no tiene teléfono, no se enviarán recordatorios.
+              </p>
+            </div>
+
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
@@ -367,28 +394,8 @@ export default function EditWorkerPage() {
           </h2>
 
           <div className="space-y-4">
-            {/* Toggle */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="sms_enabled"
-                checked={smsEnabled}
-                onChange={(e) => setSmsEnabled(e.target.checked)}
-                className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
-                disabled={saving}
-              />
-              <label htmlFor="sms_enabled" className="text-sm font-medium text-foreground">
-                Activar recordatorios SMS para este trabajador
-              </label>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Se utilizará el número de teléfono del trabajador para enviar los SMS.
-              Si no tiene teléfono, no se enviarán recordatorios.
-            </p>
-
             {/* Send SMS button */}
-            {smsCredits?.unlimited && formData.phone_number && (
+            {smsCredits?.provider_enabled && (smsCredits.unlimited || (smsCredits.balance != null && smsCredits.balance > 0)) && formData.phone_number && (
               <button
                 type="button"
                 onClick={() => setShowSmsModal(true)}
@@ -412,7 +419,6 @@ export default function EditWorkerPage() {
                   <SmsHistoryTable
                     messages={recentSmsMessages}
                     compact={true}
-                    workerId={workerId}
                   />
                 )}
               </div>
@@ -423,9 +429,21 @@ export default function EditWorkerPage() {
 
       {/* SMS Send Modal */}
       {showSmsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => { if (!sendingSms) { setShowSmsModal(false); setSmsText(""); } }}
+        >
+          <div
+            className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sms-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Escape" && !sendingSms) { setShowSmsModal(false); setSmsText(""); } }}
+            tabIndex={-1}
+            ref={smsModalRef}
+          >
+            <h3 id="sms-modal-title" className="text-lg font-semibold text-foreground mb-4">
               Enviar SMS a {formData.first_name} {formData.last_name}
             </h3>
 

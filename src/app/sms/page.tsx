@@ -76,16 +76,24 @@ export default function SmsPage() {
     }
   };
 
+  const clampNumberInput = (e: React.ChangeEvent<HTMLInputElement>): number => {
+    const parsed = parseInt(e.target.value, 10);
+    if (isNaN(parsed)) return 0;
+    const min = e.target.min ? parseInt(e.target.min, 10) : 0;
+    const max = e.target.max ? parseInt(e.target.max, 10) : Infinity;
+    return Math.min(max, Math.max(min, parsed));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const { name, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked
           : type === "number"
-          ? parseInt(value) || 0
-          : value,
+          ? clampNumberInput(e as React.ChangeEvent<HTMLInputElement>)
+          : e.target.value,
     }));
   };
 
@@ -117,6 +125,39 @@ export default function SmsPage() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    setSavingTemplate(true);
+    try {
+      const result = await apiClient.updateSmsTemplate({ template: templateText });
+      setTemplateData(result);
+      setTemplateText(result.template);
+      toast.success("Plantilla guardada correctamente");
+    } catch (error) {
+      console.error("Error saving template:", error);
+      const message =
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Error al guardar la plantilla";
+      toast.error(message);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const handleResetTemplate = async () => {
+    setSavingTemplate(true);
+    try {
+      const result = await apiClient.resetSmsTemplate();
+      setTemplateData(result);
+      setTemplateText(result.template);
+      toast.success("Plantilla restaurada por defecto");
+    } catch (error) {
+      console.error("Error resetting template:", error);
+      toast.error("Error al restaurar la plantilla");
+    } finally {
+      setSavingTemplate(false);
     }
   };
 
@@ -301,23 +342,7 @@ export default function SmsPage() {
                   <button
                     type="button"
                     disabled={savingTemplate}
-                    onClick={async () => {
-                      setSavingTemplate(true);
-                      try {
-                        const result = await apiClient.updateSmsTemplate({ template: templateText });
-                        setTemplateData(result);
-                        setTemplateText(result.template);
-                        toast.success("Plantilla guardada correctamente");
-                      } catch (error) {
-                        console.error("Error saving template:", error);
-                        const message =
-                          (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-                          "Error al guardar la plantilla";
-                        toast.error(message);
-                      } finally {
-                        setSavingTemplate(false);
-                      }
-                    }}
+                    onClick={handleSaveTemplate}
                     className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {savingTemplate ? "Guardando..." : "Guardar plantilla"}
@@ -327,20 +352,7 @@ export default function SmsPage() {
                     <button
                       type="button"
                       disabled={savingTemplate}
-                      onClick={async () => {
-                        setSavingTemplate(true);
-                        try {
-                          const result = await apiClient.resetSmsTemplate();
-                          setTemplateData(result);
-                          setTemplateText(result.template);
-                          toast.success("Plantilla restaurada por defecto");
-                        } catch (error) {
-                          console.error("Error resetting template:", error);
-                          toast.error("Error al restaurar la plantilla");
-                        } finally {
-                          setSavingTemplate(false);
-                        }
-                      }}
+                      onClick={handleResetTemplate}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Restaurar por defecto

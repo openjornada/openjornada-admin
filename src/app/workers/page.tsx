@@ -3,20 +3,9 @@
 import { useState, useEffect } from "react";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, type Worker } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { AiOutlinePlus, AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
-
-interface Worker {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  id_number: string;
-  created_at: string;
-  sms_config?: { sms_enabled: boolean };
-}
 
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<Worker[]>([]);
