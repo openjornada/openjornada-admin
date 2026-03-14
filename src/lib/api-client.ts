@@ -37,6 +37,7 @@ interface UpdateWorkerData {
   id_number: string;
   password?: string;
   company_ids?: string[];
+  sms_enabled?: boolean;
 }
 
 interface Worker {
@@ -50,6 +51,87 @@ interface Worker {
   created_at: string;
   company_ids: string[];
   company_names: string[];
+  sms_config?: { sms_enabled: boolean };
+}
+
+// SMS types
+interface SmsConfig {
+  enabled: boolean;
+  first_reminder_minutes: number;
+  reminder_frequency_minutes: number;
+  max_reminders_per_day: number;
+  active_hours_start: string;
+  active_hours_end: string;
+}
+
+interface SmsCredits {
+  balance: number;
+  currency: string;
+  unlimited: boolean;
+  provider_enabled: boolean;
+  last_updated: string;
+}
+
+interface SmsMessage {
+  id: string;
+  worker_id: string;
+  worker_name: string;
+  worker_id_number: string;
+  phone_number: string;
+  message: string;
+  status: "pending" | "sent" | "delivered" | "failed";
+  sent_at?: string;
+  delivered_at?: string;
+  error_message?: string;
+  cost?: number;
+  created_at: string;
+}
+
+interface SmsSendRequest {
+  message: string;
+}
+
+interface SmsSendResponse {
+  success: boolean;
+  error_message?: string;
+}
+
+interface SmsHistoryParams {
+  start_date?: string;
+  end_date?: string;
+  worker_id?: string;
+  status?: string;
+  skip?: number;
+  limit?: number;
+}
+
+interface SmsHistoryResponse {
+  messages: SmsMessage[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+interface WorkerSmsConfig {
+  worker_id: string;
+  sms_enabled: boolean;
+}
+
+interface SmsStats {
+  sent_today: number;
+  failed_today: number;
+  pending: number;
+  sent_this_month: number;
+}
+
+interface SmsTemplateResponse {
+  template: string;
+  default_template: string;
+  available_tags: { tag: string; description: string; example: string }[];
+}
+
+interface SmsTemplateUpdate {
+  template: string;
 }
 
 interface TimeRecord {
@@ -780,6 +862,72 @@ class ApiClient {
     const response = await this.client.get("/api/backups/schedule/status");
     return response.data;
   }
+
+  // SMS endpoints
+  async getSmsConfig(): Promise<SmsConfig> {
+    const response = await this.client.get<SmsConfig>("/api/sms/config");
+    return response.data;
+  }
+
+  async updateSmsConfig(data: Partial<SmsConfig>): Promise<SmsConfig> {
+    const response = await this.client.patch<SmsConfig>("/api/sms/config", data);
+    return response.data;
+  }
+
+  async getSmsCredits(): Promise<SmsCredits> {
+    const response = await this.client.get<SmsCredits>("/api/sms/credits");
+    return response.data;
+  }
+
+  async getSmsHistory(params?: SmsHistoryParams): Promise<SmsHistoryResponse> {
+    const response = await this.client.get<SmsHistoryResponse>("/api/sms/history", { params });
+    return response.data;
+  }
+
+  async clearSmsHistory(): Promise<{ deleted: number }> {
+    const response = await this.client.delete<{ deleted: number }>("/api/sms/history");
+    return response.data;
+  }
+
+  async getSmsMessage(id: string): Promise<SmsMessage> {
+    const response = await this.client.get<SmsMessage>(`/api/sms/messages/${id}`);
+    return response.data;
+  }
+
+  async sendWorkerSms(workerId: string, data: SmsSendRequest): Promise<SmsSendResponse> {
+    const response = await this.client.post<SmsSendResponse>(`/api/workers/${workerId}/sms/send`, data);
+    return response.data;
+  }
+
+  async getWorkerSmsConfig(workerId: string): Promise<WorkerSmsConfig> {
+    const response = await this.client.get<WorkerSmsConfig>(`/api/workers/${workerId}/sms-config`);
+    return response.data;
+  }
+
+  async updateWorkerSmsConfig(workerId: string, data: Omit<WorkerSmsConfig, "worker_id">): Promise<WorkerSmsConfig> {
+    const response = await this.client.patch<WorkerSmsConfig>(`/api/workers/${workerId}/sms-config`, data);
+    return response.data;
+  }
+
+  async getSmsStats(): Promise<SmsStats> {
+    const response = await this.client.get<SmsStats>("/api/sms/stats");
+    return response.data;
+  }
+
+  async getSmsTemplate(): Promise<SmsTemplateResponse> {
+    const response = await this.client.get<SmsTemplateResponse>("/api/sms/template");
+    return response.data;
+  }
+
+  async updateSmsTemplate(data: SmsTemplateUpdate): Promise<SmsTemplateResponse> {
+    const response = await this.client.put<SmsTemplateResponse>("/api/sms/template", data);
+    return response.data;
+  }
+
+  async resetSmsTemplate(): Promise<SmsTemplateResponse> {
+    const response = await this.client.delete<SmsTemplateResponse>("/api/sms/template");
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -822,4 +970,15 @@ export type {
   RecordIntegrity,
   ReportExportParams,
   OvertimeExportParams,
+  SmsConfig,
+  SmsCredits,
+  SmsMessage,
+  SmsHistoryParams,
+  SmsHistoryResponse,
+  WorkerSmsConfig,
+  SmsStats,
+  SmsSendRequest,
+  SmsSendResponse,
+  SmsTemplateResponse,
+  SmsTemplateUpdate,
 };

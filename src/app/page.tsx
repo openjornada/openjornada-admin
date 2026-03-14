@@ -5,13 +5,15 @@ import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { appConfig } from "@/lib/config";
-import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart } from "react-icons/ai";
+import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart, AiOutlineMessage } from "react-icons/ai";
 
 export default function Home() {
   const [stats, setStats] = useState({
     totalWorkers: 0,
     totalRecords: 0,
     pendingChangeRequests: 0,
+    smsSentToday: 0,
+    smsFailedToday: 0,
     loading: true,
   });
 
@@ -21,16 +23,19 @@ export default function Home() {
 
   const loadStats = async () => {
     try {
-      const [workers, records, pendingRequests] = await Promise.all([
+      const [workers, records, pendingRequests, smsStatsResult] = await Promise.allSettled([
         apiClient.getWorkers(),
         apiClient.getTimeRecords(),
         apiClient.getChangeRequests({ status: "pending" }),
+        apiClient.getSmsStats(),
       ]);
 
       setStats({
-        totalWorkers: workers.length,
-        totalRecords: records.length,
-        pendingChangeRequests: pendingRequests.length,
+        totalWorkers: workers.status === "fulfilled" ? workers.value.length : 0,
+        totalRecords: records.status === "fulfilled" ? records.value.length : 0,
+        pendingChangeRequests: pendingRequests.status === "fulfilled" ? pendingRequests.value.length : 0,
+        smsSentToday: smsStatsResult.status === "fulfilled" ? smsStatsResult.value.sent_today : 0,
+        smsFailedToday: smsStatsResult.status === "fulfilled" ? smsStatsResult.value.failed_today : 0,
         loading: false,
       });
     } catch (error) {
@@ -39,6 +44,8 @@ export default function Home() {
         totalWorkers: 0,
         totalRecords: 0,
         pendingChangeRequests: 0,
+        smsSentToday: 0,
+        smsFailedToday: 0,
         loading: false,
       });
     }
@@ -58,7 +65,7 @@ export default function Home() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -116,6 +123,32 @@ export default function Home() {
               className={`text-sm hover:underline ${stats.pendingChangeRequests > 0 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-accent'}`}
             >
               {stats.pendingChangeRequests > 0 ? 'Revisar peticiones pendientes →' : 'Ver peticiones de cambio →'}
+            </Link>
+          </div>
+
+          {/* SMS stat card */}
+          <div className={`bg-card border rounded-lg p-6 ${stats.smsFailedToday > 0 ? 'border-red-400 bg-red-50/50 dark:bg-red-900/10' : 'border-border'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">SMS Enviados Hoy</p>
+                <p className={`text-3xl font-bold ${stats.smsFailedToday > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                  {stats.loading ? "..." : stats.smsSentToday}
+                </p>
+                {!stats.loading && stats.smsFailedToday > 0 && (
+                  <p className="text-xs text-destructive mt-1">
+                    {stats.smsFailedToday} fallido{stats.smsFailedToday !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${stats.smsFailedToday > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-accent/10'}`}>
+                <AiOutlineMessage className={`text-2xl ${stats.smsFailedToday > 0 ? 'text-destructive' : 'text-accent'}`} />
+              </div>
+            </div>
+            <Link
+              href="/sms/history"
+              className={`text-sm hover:underline ${stats.smsFailedToday > 0 ? 'text-destructive font-medium' : 'text-accent'}`}
+            >
+              {stats.smsFailedToday > 0 ? 'Ver SMS fallidos →' : 'Ver historial SMS →'}
             </Link>
           </div>
         </div>

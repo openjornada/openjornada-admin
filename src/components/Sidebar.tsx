@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 
@@ -174,6 +174,41 @@ export default function Sidebar() {
               >
                 <AiOutlineCloudServer className="text-xl" />
                 <span>Backups</span>
+              </Link>
+            </li>
+
+            {/* SMS */}
+            <li className="pt-4 mt-4 border-t border-sidebar-border">
+              <span className="px-3 text-xs font-semibold uppercase text-sidebar-foreground/40 tracking-wider">
+                SMS
+              </span>
+            </li>
+
+            <li>
+              <Link
+                href="/sms"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  pathname === "/sms"
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineMessage className="text-xl" />
+                <span>Recordatorios SMS</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/sms/history"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive("/sms/history")
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineClockCircle className="text-xl" />
+                <span>Historial SMS</span>
               </Link>
             </li>
 

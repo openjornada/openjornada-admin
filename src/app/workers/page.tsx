@@ -15,6 +15,7 @@ interface Worker {
   phone_number: string;
   id_number: string;
   created_at: string;
+  sms_config?: { sms_enabled: boolean };
 }
 
 export default function WorkersPage() {
@@ -111,6 +112,9 @@ export default function WorkersPage() {
                       Teléfono
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      SMS
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Fecha de Registro
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -132,6 +136,17 @@ export default function WorkersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {worker.phone_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {(worker.sms_config?.sms_enabled ?? true) ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            Activo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                            Inactivo
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {new Date(worker.created_at).toLocaleDateString("es-ES")}
