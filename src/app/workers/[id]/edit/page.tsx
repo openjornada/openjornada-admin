@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
-import { apiClient, type Worker, type Company } from "@/lib/api-client";
+import { apiClient, type Worker, type Company, type SmsMessage, type SmsCredits } from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { AiOutlineArrowLeft } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineMessage } from "react-icons/ai";
+import SmsHistoryTable from "@/components/sms/SmsHistoryTable";
 
 export default function EditWorkerPage() {
   const router = useRouter();
@@ -26,6 +27,21 @@ export default function EditWorkerPage() {
     id_number: "",
     password: "", // Optional, only if changing password
   });
+
+  // SMS state
+  const [smsEnabled, setSmsEnabled] = useState(true);
+  const [recentSmsMessages, setRecentSmsMessages] = useState<SmsMessage[]>([]);
+  const [loadingSms, setLoadingSms] = useState(true);
+  const [smsCredits, setSmsCredits] = useState<SmsCredits | null>(null);
+  const [showSmsModal, setShowSmsModal] = useState(false);
+  const [smsText, setSmsText] = useState("");
+  const [sendingSms, setSendingSms] = useState(false);
+
+  const smsModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showSmsModal) smsModalRef.current?.focus();
+  }, [showSmsModal]);
 
   const loadCompanies = async () => {
     try {
@@ -51,6 +67,7 @@ export default function EditWorkerPage() {
         password: "",
       });
       setSelectedCompanies(worker.company_ids || []);
+      setSmsEnabled(worker.sms_config?.sms_enabled ?? true);
     } catch (error) {
       console.error("Error loading worker:", error);
       toast.error("Error al cargar el trabajador");
@@ -60,9 +77,55 @@ export default function EditWorkerPage() {
     }
   };
 
+  const loadSmsHistory = async () => {
+    setLoadingSms(true);
+    try {
+      const data = await apiClient.getSmsHistory({ worker_id: workerId, limit: 5 });
+      setRecentSmsMessages(data.messages);
+    } catch (error) {
+      console.error("Error loading SMS history:", error);
+      // Non-critical, don't show toast
+    } finally {
+      setLoadingSms(false);
+    }
+  };
+
+  const loadSmsCredits = async () => {
+    try {
+      const data = await apiClient.getSmsCredits();
+      setSmsCredits(data);
+    } catch (error) {
+      console.error("Error loading SMS credits:", error);
+    }
+  };
+
+  const handleSendSms = async () => {
+    if (!smsText.trim()) return;
+    setSendingSms(true);
+    try {
+      const result = await apiClient.sendWorkerSms(workerId, { message: smsText.trim() });
+      if (result.success) {
+        toast.success("SMS enviado correctamente");
+        setShowSmsModal(false);
+        setSmsText("");
+        loadSmsHistory();
+      } else {
+        toast.error(result.error_message || "Error al enviar el SMS");
+      }
+    } catch (error) {
+      console.error("Error sending SMS:", error);
+      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al enviar el SMS";
+      toast.error(message);
+    } finally {
+      setSendingSms(false);
+    }
+  };
+
   useEffect(() => {
     loadCompanies();
     loadWorker();
+    loadSmsHistory();
+    loadSmsCredits();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workerId]);
 
@@ -106,6 +169,7 @@ export default function EditWorkerPage() {
         phone_number: formData.phone_number,
         id_number: formData.id_number,
         company_ids: selectedCompanies,
+        sms_enabled: smsEnabled,
         ...(formData.password && { password: formData.password }),
       };
 
@@ -283,6 +347,27 @@ export default function EditWorkerPage() {
               </p>
             </div>
 
+            {/* SMS toggle — last field inside the form */}
+            <div className="border-t border-border pt-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="sms_enabled"
+                  checked={smsEnabled}
+                  onChange={(e) => setSmsEnabled(e.target.checked)}
+                  className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
+                  disabled={saving}
+                />
+                <label htmlFor="sms_enabled" className="text-sm font-medium text-foreground">
+                  Activar recordatorios SMS para este trabajador
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se utilizará el número de teléfono del trabajador para enviar los SMS.
+                Si no tiene teléfono, no se enviarán recordatorios.
+              </p>
+            </div>
+
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
@@ -300,7 +385,117 @@ export default function EditWorkerPage() {
             </div>
           </form>
         </div>
+
+        {/* SMS Card */}
+        <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mt-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <AiOutlineMessage className="text-accent" />
+            Recordatorios SMS
+          </h2>
+
+          <div className="space-y-4">
+            {/* Send SMS button */}
+            {smsCredits?.provider_enabled && (smsCredits.unlimited || (smsCredits.balance != null && smsCredits.balance > 0)) && formData.phone_number && (
+              <button
+                type="button"
+                onClick={() => setShowSmsModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity text-sm"
+              >
+                <AiOutlineMessage />
+                Enviar SMS
+              </button>
+            )}
+
+            {/* Recent SMS mini-table */}
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Últimos mensajes SMS</h3>
+              <div className="border border-border rounded-lg overflow-hidden">
+                {loadingSms ? (
+                  <div className="p-6 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Cargando...</p>
+                  </div>
+                ) : (
+                  <SmsHistoryTable
+                    messages={recentSmsMessages}
+                    compact={true}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* SMS Send Modal */}
+      {showSmsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => { if (!sendingSms) { setShowSmsModal(false); setSmsText(""); } }}
+        >
+          <div
+            className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sms-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Escape" && !sendingSms) { setShowSmsModal(false); setSmsText(""); } }}
+            tabIndex={-1}
+            ref={smsModalRef}
+          >
+            <h3 id="sms-modal-title" className="text-lg font-semibold text-foreground mb-4">
+              Enviar SMS a {formData.first_name} {formData.last_name}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                  Teléfono destino
+                </label>
+                <p className="text-sm text-foreground">{formData.phone_number}</p>
+              </div>
+
+              <div>
+                <label htmlFor="sms_text" className="block text-sm font-medium text-foreground mb-1">
+                  Mensaje
+                </label>
+                <textarea
+                  id="sms_text"
+                  value={smsText}
+                  onChange={(e) => setSmsText(e.target.value)}
+                  maxLength={480}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                  placeholder="Escribe el mensaje SMS..."
+                  disabled={sendingSms}
+                />
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  {smsText.length}/480
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => { setShowSmsModal(false); setSmsText(""); }}
+                disabled={sendingSms}
+                className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSendSms}
+                disabled={!smsText.trim() || sendingSms}
+                className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingSms ? "Enviando..." : "Enviar SMS"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppWrapper>
   );
 }
