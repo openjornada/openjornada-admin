@@ -1,3 +1,5 @@
+> 🇬🇧 [Read in English](README.en.md)
+
 # OpenJornada Admin
 
 Panel de administración web para OpenJornada - Sistema de gestión de registros de jornada laboral.
