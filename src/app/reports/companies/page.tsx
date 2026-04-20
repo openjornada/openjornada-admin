@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
-import { apiClient, CompanyMonthlySummary, WorkerMonthlySummary } from "@/lib/api-client";
+import { apiClient, CompanyMonthlySummary, WorkerMonthlySummary, Company } from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { AiOutlineArrowLeft, AiOutlineBarChart } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineBarChart, AiOutlineDownload } from "react-icons/ai";
 import StatCard from "@/components/reports/StatCard";
 import ReportFilters from "@/components/reports/ReportFilters";
 import ExportButtons from "@/components/reports/ExportButtons";
+import ExportReportModal from "@/components/reports/ExportReportModal";
 import { getMonthName, formatMinutesToHoursMinutes } from "@/utils/dateFormatters";
 
 export default function CompanyReportPage() {
@@ -20,6 +21,14 @@ export default function CompanyReportPage() {
     year: number;
     month: number;
   } | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  useEffect(() => {
+    apiClient.getCompanies().then(setCompanies).catch(() => {
+      toast.error("No se pudieron cargar las empresas");
+    });
+  }, []);
 
   const handleFilter = async (filters: {
     company_id: string;
@@ -88,13 +97,24 @@ export default function CompanyReportPage() {
             <AiOutlineArrowLeft />
             <span>Volver a informes</span>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <AiOutlineBarChart />
-            Informe Mensual de Empresa
-          </h1>
-          <p className="text-muted-foreground">
-            Resumen mensual de horas trabajadas por empresa
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                <AiOutlineBarChart />
+                Informe Mensual de Empresa
+              </h1>
+              <p className="text-muted-foreground">
+                Resumen mensual de horas trabajadas por empresa
+              </p>
+            </div>
+            <button
+              onClick={() => setExportModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors shrink-0"
+            >
+              <AiOutlineDownload className="text-base" />
+              Exportar informe de jornada
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -237,6 +257,13 @@ export default function CompanyReportPage() {
           </div>
         )}
       </div>
+
+      <ExportReportModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        companies={companies}
+        defaultCompanyId={currentFilters?.company_id}
+      />
     </AppWrapper>
   );
 }
