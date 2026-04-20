@@ -18,17 +18,17 @@ function getPreviousMonthDefaults(): { year: number; month: number } {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function ExportReportModal({
   isOpen,
   onClose,
   companies,
   defaultCompanyId,
 }: ExportReportModalProps) {
-  const defaults = getPreviousMonthDefaults();
-
   const [companyId, setCompanyId] = useState(defaultCompanyId ?? companies[0]?.id ?? "");
-  const [year, setYear] = useState(defaults.year);
-  const [month, setMonth] = useState(defaults.month);
+  const [year, setYear] = useState(() => getPreviousMonthDefaults().year);
+  const [month, setMonth] = useState(() => getPreviousMonthDefaults().month);
   const [format, setFormat] = useState<"pdf" | "csv">("pdf");
   const [downloading, setDownloading] = useState(false);
 
@@ -36,8 +36,8 @@ export default function ExportReportModal({
   useEffect(() => {
     if (defaultCompanyId) {
       setCompanyId(defaultCompanyId);
-    } else if (companies.length > 0 && !companyId) {
-      setCompanyId(companies[0].id);
+    } else if (companies.length > 0) {
+      setCompanyId((prev) => prev || companies[0].id);
     }
   }, [defaultCompanyId, companies]);
 
@@ -54,6 +54,10 @@ export default function ExportReportModal({
   const handleDownload = async () => {
     if (!companyId) {
       toast.error("Selecciona una empresa");
+      return;
+    }
+    if (year < 2020 || year > CURRENT_YEAR) {
+      toast.error("Año no válido");
       return;
     }
     setDownloading(true);
@@ -83,10 +87,15 @@ export default function ExportReportModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      <div className="relative bg-card border border-border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div
+        className="relative bg-card border border-border rounded-xl shadow-xl w-full max-w-md mx-4 p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 id="export-modal-title" className="text-lg font-semibold text-foreground">
             Exportar informe de jornada
           </h2>
           <button
@@ -148,7 +157,7 @@ export default function ExportReportModal({
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
                 min={2020}
-                max={new Date().getFullYear()}
+                max={CURRENT_YEAR}
                 className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               />
             </div>

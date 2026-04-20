@@ -25,7 +25,9 @@ export default function CompanyReportPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
   useEffect(() => {
-    apiClient.getCompanies().then(setCompanies).catch(() => {});
+    apiClient.getCompanies().then(setCompanies).catch(() => {
+      toast.error("No se pudieron cargar las empresas");
+    });
   }, []);
 
   const handleFilter = async (filters: {
