@@ -1,3 +1,5 @@
+> 🇬🇧 [Read in English](README.en.md)
+
 # OpenJornada Admin
 
 Panel de administración web para OpenJornada - Sistema de gestión de registros de jornada laboral.
@@ -16,6 +18,12 @@ Panel de administración web para OpenJornada - Sistema de gestión de registros
   - Informe mensual por empresa con resumen por trabajador
   - Estado de firmas mensuales de los trabajadores
   - Exportación a CSV, Excel y PDF para Inspección de Trabajo
+- **Recordatorios SMS**: Gestión completa del sistema de recordatorios SMS
+  - Configuración del servicio (activar/desactivar, horarios, frecuencia)
+  - Plantilla de mensaje personalizable con etiquetas dinámicas
+  - Historial de SMS enviados con filtros por fecha, estado y trabajador
+  - Dashboard con estado del proveedor, créditos y estadísticas
+  - Opt-out individual por trabajador desde la edición del perfil
 
 ## Tecnologías
 
@@ -162,6 +170,9 @@ openjornada-admin/
 │   │   │   ├── workers/     # Informe mensual por trabajador
 │   │   │   ├── companies/   # Informe mensual por empresa
 │   │   │   └── signatures/  # Estado de firmas mensuales
+│   │   ├── sms/            # Configuración y gestión de SMS
+│   │   │   ├── page.tsx    # Configuración y plantilla
+│   │   │   └── history/    # Historial de SMS enviados
 │   │   ├── layout.tsx       # Layout principal
 │   │   └── page.tsx         # Dashboard
 │   ├── components/          # Componentes reutilizables
@@ -169,6 +180,10 @@ openjornada-admin/
 │   │   │   ├── StatCard.tsx        # Tarjeta KPI (default/warning/success)
 │   │   │   ├── ReportFilters.tsx   # Filtros: empresa, año, mes, trabajador
 │   │   │   └── ExportButtons.tsx   # Botones de exportación CSV/XLSX/PDF
+│   │   ├── sms/                  # Componentes SMS
+│   │   │   ├── SmsHistoryTable.tsx   # Tabla de historial
+│   │   │   ├── SmsCreditsBadge.tsx   # Badge de créditos
+│   │   │   └── SmsStatusBadge.tsx    # Badge de estado
 │   │   ├── AppWrapper.tsx   # Wrapper con sidebar, topnav, footer
 │   │   ├── Sidebar.tsx      # Barra lateral de navegación
 │   │   ├── TopNav.tsx       # Barra superior
@@ -245,6 +260,15 @@ El diseño utiliza los mismos colores que la landing page de OpenJornada:
 - `GET /api/reports/monthly/worker/{id}` - Informe mensual de trabajador
 - `GET /api/reports/export/monthly` - Exportar informe mensual (CSV/XLSX/PDF)
 - `GET /api/reports/integrity/{id}` - Verificar integridad de un registro
+- `GET /api/sms/credits` - Créditos y estado del proveedor
+- `GET /api/sms/config` - Configuración SMS de la empresa
+- `PATCH /api/sms/config` - Actualizar configuración SMS
+- `GET /api/sms/template` - Plantilla de mensaje
+- `PUT /api/sms/template` - Actualizar plantilla
+- `POST /api/sms/template/reset` - Restaurar plantilla por defecto
+- `GET /api/sms/stats` - Estadísticas de envío
+- `GET /api/sms/history` - Historial de SMS
+- `POST /api/workers/{id}/sms/send` - Enviar SMS a trabajador
 
 ## Desarrollo
 
