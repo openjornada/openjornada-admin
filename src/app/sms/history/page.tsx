@@ -37,7 +37,10 @@ function SmsHistoryContent() {
   }, [showClearModal]);
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     loadWorkers();
+    // eslint-disable-next-line react-hooks/immutability
     loadMessages(0, { status: searchParams.get("status") ?? "" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

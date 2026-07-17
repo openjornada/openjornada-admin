@@ -31,6 +31,8 @@ export default function EditCompanyPage() {
   };
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCompany();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);

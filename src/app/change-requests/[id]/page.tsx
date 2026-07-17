@@ -59,6 +59,8 @@ export default function ChangeRequestDetailPage() {
   };
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadChangeRequest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [changeRequestId]);

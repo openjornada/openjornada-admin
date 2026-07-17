@@ -25,6 +25,8 @@ export default function EditPauseTypePage() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pauseTypeId]);

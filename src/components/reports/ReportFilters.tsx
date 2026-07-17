@@ -33,13 +33,18 @@ export default function ReportFilters({
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
   }, []);
 
   useEffect(() => {
     if (showWorkerFilter && companyId) {
+      // TODO: migrar a hook de datos (fetch-on-mount)
+      // eslint-disable-next-line react-hooks/immutability
       loadWorkers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, showWorkerFilter]);
 
   const loadCompanies = async () => {

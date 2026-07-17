@@ -51,6 +51,8 @@ export default function IncidentDetailPage() {
   };
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadIncident();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [incidentId]);

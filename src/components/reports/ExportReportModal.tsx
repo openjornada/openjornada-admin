@@ -34,7 +34,9 @@ export default function ExportReportModal({
 
   // Sync companyId when defaultCompanyId or companies change
   useEffect(() => {
+    // TODO: derivar de props en render en vez de sincronizar por effect
     if (defaultCompanyId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCompanyId(defaultCompanyId);
     } else if (companies.length > 0) {
       setCompanyId((prev) => prev || companies[0].id);

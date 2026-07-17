@@ -18,6 +18,8 @@ export default function Home() {
   });
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     loadStats();
   }, []);
 

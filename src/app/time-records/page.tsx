@@ -23,7 +23,10 @@ export default function TimeRecordsPage() {
 
   useEffect(() => {
     // Load records with default month range on initial mount only
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     loadRecords({ start_date: monthRange.start, end_date: monthRange.end });
+    // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

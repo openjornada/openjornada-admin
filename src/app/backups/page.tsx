@@ -30,7 +30,10 @@ export default function BackupsPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     fetchBackups();
+    // eslint-disable-next-line react-hooks/immutability
     fetchScheduleStatus();
   }, []);
 

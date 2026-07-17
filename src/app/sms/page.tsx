@@ -30,6 +30,8 @@ export default function SmsPage() {
   });
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     fetchData();
   }, []);
 

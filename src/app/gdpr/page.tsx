@@ -17,6 +17,8 @@ export default function GDPRPage() {
   const [deleteReason, setDeleteReason] = useState("");
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     fetchWorkers();
   }, []);
 
