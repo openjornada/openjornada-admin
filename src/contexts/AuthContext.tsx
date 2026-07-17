@@ -31,10 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (currentUser.role !== "admin") {
             apiClient.clearToken();
             router.push("/login");
-            return;
+          } else {
+            setUser(currentUser);
           }
-
-          setUser(currentUser);
         } catch (error) {
           console.error("Failed to get current user:", error);
           apiClient.clearToken();

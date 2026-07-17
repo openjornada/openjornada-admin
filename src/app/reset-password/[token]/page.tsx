@@ -77,15 +77,17 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
 
       const errorMsg = error.response?.data?.detail || error.message;
 
+      let message: string;
       if (errorMsg?.includes("expired") || errorMsg?.includes("expirado")) {
-        setErrorMessage("El enlace de recuperación ha expirado. Por favor solicita uno nuevo.");
+        message = "El enlace de recuperación ha expirado. Por favor solicita uno nuevo.";
       } else if (errorMsg?.includes("invalid") || errorMsg?.includes("inválido")) {
-        setErrorMessage("El enlace de recuperación es inválido. Por favor solicita uno nuevo.");
+        message = "El enlace de recuperación es inválido. Por favor solicita uno nuevo.";
       } else {
-        setErrorMessage("Error al restablecer la contraseña. Por favor intenta de nuevo.");
+        message = "Error al restablecer la contraseña. Por favor intenta de nuevo.";
       }
 
-      toast.error(errorMessage || "Error al restablecer la contraseña");
+      setErrorMessage(message);
+      toast.error(message);
     }
   };
 

@@ -7,9 +7,11 @@ import { usePathname } from "next/navigation";
 import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(path + "/");
@@ -254,12 +256,7 @@ export default function Sidebar() {
         <div className="border-t border-sidebar-border p-3">
           <button
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                const { apiClient } = require("@/lib/api-client");
-                apiClient.logout();
-              }
-            }}
+            onClick={logout}
           >
             <BiLogOut className="text-xl" />
             <span>Cerrar Sesión</span>

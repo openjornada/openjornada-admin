@@ -9,6 +9,7 @@ interface ReportFiltersProps {
     company_id: string;
     year: number;
     month: number;
+    worker_id?: string | null;
     timezone?: string;
   }) => void;
   showWorkerFilter?: boolean;
@@ -70,10 +71,10 @@ export default function ReportFilters({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyId) return;
-    onFilter({ company_id: companyId, year, month });
     if (onWorkerChange) {
       onWorkerChange(workerId || null);
     }
+    onFilter({ company_id: companyId, year, month, worker_id: workerId || null });
   };
 
   const currentYear = now.getFullYear();

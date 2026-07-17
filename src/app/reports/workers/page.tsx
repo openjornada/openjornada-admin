@@ -54,16 +54,26 @@ export default function WorkerReportsPage() {
     company_id: string;
     year: number;
     month: number;
+    worker_id?: string | null;
   }) => {
-    setFilters(f);
+    const workerId = f.worker_id ?? null;
+    setFilters({ company_id: f.company_id, year: f.year, month: f.month });
     setLoading(true);
     setReport(null);
     try {
-      if (selectedWorkerId) {
-        const data = await apiClient.getWorkerMonthlyReport(selectedWorkerId, f);
+      if (workerId) {
+        const data = await apiClient.getWorkerMonthlyReport(workerId, {
+          company_id: f.company_id,
+          year: f.year,
+          month: f.month,
+        });
         setReport(data);
       } else {
-        const data = await apiClient.getCompanyMonthlyReport(f);
+        const data = await apiClient.getCompanyMonthlyReport({
+          company_id: f.company_id,
+          year: f.year,
+          month: f.month,
+        });
         setReport(data);
       }
     } catch (error: unknown) {

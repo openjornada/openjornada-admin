@@ -5,21 +5,7 @@ import AppWrapper from "@/components/AppWrapper";
 import { apiClient, type TimeRecord, type Company } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { AiOutlineClockCircle, AiOutlineDownload } from "react-icons/ai";
-import * as XLSX from "xlsx";
-import { formatToLocalTime } from "@/utils/dateFormatters";
-
-// Helper function to get current month date range
-const getCurrentMonthRange = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // +1 porque getMonth() es 0-indexed
-  const day = String(now.getDate()).padStart(2, '0');
-
-  return {
-    start: `${year}-${month}-01`,
-    end: `${year}-${month}-${day}`
-  };
-};
+import { formatToLocalTime, getCurrentMonthRange } from "@/utils/dateFormatters";
 
 export default function TimeRecordsPage() {
   const [records, setRecords] = useState<TimeRecord[]>([]);
@@ -112,13 +98,15 @@ export default function TimeRecordsPage() {
   };
 
   // Export to Excel function
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
     if (filteredRecords.length === 0) {
       toast.error("No hay registros para exportar");
       return;
     }
 
     try {
+      const XLSX = await import("xlsx");
+
       // Prepare data for Excel
       const dataToExport = filteredRecords.map((record) => ({
         DNI: record.worker_id_number,

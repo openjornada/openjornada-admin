@@ -8,7 +8,7 @@ import type { SmsMessage, Worker } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { AiOutlineMessage, AiOutlineDelete } from "react-icons/ai";
 import SmsHistoryTable from "@/components/sms/SmsHistoryTable";
-import { getCurrentMonthRange } from "@/lib/sms-utils";
+import { getCurrentMonthRange } from "@/utils/dateFormatters";
 
 const PAGE_SIZE = 25;
 

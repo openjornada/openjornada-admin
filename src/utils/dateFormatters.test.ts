@@ -7,6 +7,7 @@ import {
   formatToLocalTimeShort,
   getMonthName,
   getBrowserTimezone,
+  getCurrentMonthRange,
 } from "./dateFormatters";
 
 // ---------------------------------------------------------------------------
@@ -241,5 +242,58 @@ describe("getBrowserTimezone", () => {
     const tz = getBrowserTimezone();
     // Valid IANA zones contain a slash (e.g., "Europe/Madrid") or are "UTC"
     expect(tz === "UTC" || tz.includes("/")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getCurrentMonthRange
+// ---------------------------------------------------------------------------
+describe("getCurrentMonthRange", () => {
+  it("returns an object with 'start' and 'end' keys", () => {
+    const range = getCurrentMonthRange();
+    expect(range).toHaveProperty("start");
+    expect(range).toHaveProperty("end");
+  });
+
+  it("start is in YYYY-MM-01 format", () => {
+    const { start } = getCurrentMonthRange();
+    expect(start).toMatch(/^\d{4}-\d{2}-01$/);
+  });
+
+  it("end is in YYYY-MM-DD format", () => {
+    const { end } = getCurrentMonthRange();
+    expect(end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("start and end share the same year and month", () => {
+    const { start, end } = getCurrentMonthRange();
+    const startYearMonth = start.slice(0, 7); // "YYYY-MM"
+    const endYearMonth = end.slice(0, 7);     // "YYYY-MM"
+    expect(startYearMonth).toBe(endYearMonth);
+  });
+
+  it("start day is always '01'", () => {
+    const { start } = getCurrentMonthRange();
+    expect(start.slice(-2)).toBe("01");
+  });
+
+  it("end day matches today's date", () => {
+    const now = new Date();
+    const todayDay = String(now.getDate()).padStart(2, "0");
+    const { end } = getCurrentMonthRange();
+    expect(end.slice(-2)).toBe(todayDay);
+  });
+
+  it("end year matches the current year", () => {
+    const now = new Date();
+    const currentYear = String(now.getFullYear());
+    const { end } = getCurrentMonthRange();
+    expect(end.slice(0, 4)).toBe(currentYear);
+  });
+
+  it("both start and end are valid date strings (parseable)", () => {
+    const { start, end } = getCurrentMonthRange();
+    expect(isNaN(new Date(start).getTime())).toBe(false);
+    expect(isNaN(new Date(end).getTime())).toBe(false);
   });
 });

@@ -6,19 +6,7 @@ import { apiClient, Incident } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { AiOutlineAlert, AiOutlineEye } from "react-icons/ai";
 import { useRouter } from "next/navigation";
-
-// Helper function to get current month date range
-const getCurrentMonthRange = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-
-  return {
-    start: `${year}-${month}-01`,
-    end: `${year}-${month}-${day}`
-  };
-};
+import { getCurrentMonthRange } from "@/utils/dateFormatters";
 
 const statusLabels = {
   pending: "Pendiente",
