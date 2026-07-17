@@ -34,9 +34,10 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success("Inicio de sesión exitoso");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
-      const message = error.response?.data?.detail || error.message || "Error al iniciar sesión";
+      const err = error as { response?: { data?: { detail?: string } }; message?: string };
+      const message = err.response?.data?.detail || err.message || "Error al iniciar sesión";
       toast.error(message);
     } finally {
       setLoading(false);

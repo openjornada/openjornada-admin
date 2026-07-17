@@ -79,11 +79,6 @@ export default function ChangeRequestsPage() {
     loadChangeRequests({ start_date: monthRange.start, end_date: monthRange.end });
   };
 
-  const truncateText = (text: string, maxLength: number = 50) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + "...";
-  };
-
   // Filter change requests by search term (worker name)
   const filteredRequests = changeRequests.filter((request) => {
     if (!searchTerm) return true;

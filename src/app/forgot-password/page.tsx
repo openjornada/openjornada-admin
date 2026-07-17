@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
       setState("success");
       setEmail("");
       toast.success("Si el email existe, recibirás instrucciones para restablecer tu contraseña");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Forgot password error:", error);
       setState("error");
       // Mensaje genérico por seguridad (no revelar si el usuario existe)

@@ -10,7 +10,7 @@ import { AiOutlineMessage, AiOutlineCheckCircle, AiOutlineCloseCircle } from "re
 import SmsCreditsBadge from "@/components/sms/SmsCreditsBadge";
 
 export default function SmsPage() {
-  const [config, setConfig] = useState<SmsConfig | null>(null);
+  const [, setConfig] = useState<SmsConfig | null>(null);
   const [credits, setCredits] = useState<SmsCredits | null>(null);
   const [stats, setStats] = useState<SmsStats | null>(null);
   const [templateData, setTemplateData] = useState<SmsTemplateResponse | null>(null);

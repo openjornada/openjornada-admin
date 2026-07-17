@@ -71,11 +71,12 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
       setNewPassword("");
       setConfirmPassword("");
       toast.success("Contraseña restablecida exitosamente");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reset password error:", error);
       setState("error");
 
-      const errorMsg = error.response?.data?.detail || error.message;
+      const err = error as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg = err.response?.data?.detail || err.message;
 
       let message: string;
       if (errorMsg?.includes("expired") || errorMsg?.includes("expirado")) {

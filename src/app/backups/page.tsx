@@ -60,7 +60,7 @@ export default function BackupsPage() {
   const handleCreateBackup = async () => {
     setCreating(true);
     try {
-      const backup = await apiClient.triggerBackup();
+      await apiClient.triggerBackup();
       toast.success("Backup iniciado correctamente");
       // Refresh list after a short delay
       setTimeout(() => {
