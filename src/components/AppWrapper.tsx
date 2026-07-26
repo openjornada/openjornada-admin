@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import TopNav from "./TopNav";
 import Footer from "./Footer";
 import ProtectedRoute from "./ProtectedRoute";
+import SubscriptionBanner from "./SubscriptionBanner";
 
 interface AppWrapperProps {
   children: ReactNode;
@@ -19,6 +20,9 @@ export default function AppWrapper({ children }: AppWrapperProps) {
 
         {/* Main content area */}
         <div className="flex-1 flex flex-col ml-64">
+          {/* Subscription status banner */}
+          <SubscriptionBanner />
+
           {/* Top navigation */}
           <TopNav />
 
