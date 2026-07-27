@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AppWrapper from "@/components/AppWrapper";
+import SubscriptionSettings from "@/components/SubscriptionSettings";
 import { apiClient } from "@/lib/api-client";
 import type { Settings, BackupConfigInput, BackupSchedule } from "@/lib/api-client";
 import toast from "react-hot-toast";
@@ -311,6 +312,9 @@ export default function SettingsPage() {
               </div>
             </form>
           </div>
+
+          {/* Subscription */}
+          <SubscriptionSettings />
 
           {/* Backup Settings */}
           <div className="bg-card border border-border rounded-lg p-6">

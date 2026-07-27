@@ -465,6 +465,20 @@ interface OvertimeExportParams {
   timezone?: string;
 }
 
+// Subscription types
+interface SubscriptionStatus {
+  enabled: boolean;
+  status?: "active" | "trialing" | "past_due" | "canceled" | "unpaid" | "incomplete_expired";
+  current_period_end?: string;
+  days_remaining?: number;
+  message?: string;
+  mode?: "live" | "demo";
+}
+
+interface SubscriptionPortal {
+  url: string;
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -930,6 +944,19 @@ class ApiClient {
     const response = await this.client.delete<SmsTemplateResponse>("/api/sms/template");
     return response.data;
   }
+
+  // Subscription endpoints
+  async getSubscriptionStatus(refresh?: boolean): Promise<SubscriptionStatus> {
+    const response = await this.client.get<SubscriptionStatus>("/api/subscription/status", {
+      params: refresh ? { refresh: true } : undefined,
+    });
+    return response.data;
+  }
+
+  async getSubscriptionPortalUrl(): Promise<SubscriptionPortal> {
+    const response = await this.client.get<SubscriptionPortal>("/api/subscription/portal");
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -983,4 +1010,6 @@ export type {
   SmsSendResponse,
   SmsTemplateResponse,
   SmsTemplateUpdate,
+  SubscriptionStatus,
+  SubscriptionPortal,
 };
