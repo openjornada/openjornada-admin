@@ -2,7 +2,7 @@ OpenJornada Frontend Component
 Copyright (C) 2024 OpenJornada Contributors
 
 This component is part of the OpenJornada project:
-https://bitbucket.org/[YOUR-WORKSPACE]/projects/OPENJORNADA
+https://github.com/openjornada
 
 This software is licensed under the GNU Affero General Public License v3.0.
 See the LICENSE file for the full license text.
@@ -114,7 +114,7 @@ contributions will be licensed under the AGPL-3.0 license.
 See CONTRIBUTING.md for contribution guidelines specific to this component.
 
 For general project contribution guidelines, see:
-https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/src/main/CONTRIBUTING.md
+https://github.com/openjornada/openjornada-admin/blob/main/CONTRIBUTING.md
 
 ===============================================================================
 
@@ -122,13 +122,13 @@ Contact & Support
 ===============================================================================
 
 For issues specific to this frontend component:
-https://bitbucket.org/[YOUR-WORKSPACE]/[REPO-NAME]/issues
+https://github.com/openjornada/openjornada-admin/issues
 
 For general project issues and documentation:
-https://bitbucket.org/[YOUR-WORKSPACE]/openjornada-core/issues
+https://github.com/openjornada
 
 For commercial support and consulting services:
-[YOUR CONTACT EMAIL]
+support@openjornada.es
 
 ===============================================================================
 
