@@ -5,7 +5,7 @@ import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { appConfig } from "@/lib/config";
-import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart, AiOutlineMessage } from "react-icons/ai";
+import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -16,6 +16,8 @@ export default function Home() {
     smsFailedToday: 0,
     loading: true,
   });
+  const [pendingAbsences, setPendingAbsences] = useState(0);
+  const [absenceLoading, setAbsenceLoading] = useState(false);
 
   useEffect(() => {
     // TODO: migrar a hook de datos (fetch-on-mount)
@@ -52,6 +54,26 @@ export default function Home() {
       });
     }
   };
+
+  useEffect(() => {
+    const loadPendingAbsences = async () => {
+      setAbsenceLoading(true);
+      try {
+        const companies = await apiClient.getCompanies();
+        const enabledCompanies = companies.filter((c) => c.absence_management_enabled);
+        const results = await Promise.allSettled(
+          enabledCompanies.map((c) => apiClient.getAbsences({ company_id: c.id, status: "pending" })),
+        );
+        const total = results.reduce((sum, r) => sum + (r.status === "fulfilled" ? r.value.length : 0), 0);
+        setPendingAbsences(total);
+      } catch {
+        setPendingAbsences(0);
+      } finally {
+        setAbsenceLoading(false);
+      }
+    };
+    loadPendingAbsences();
+  }, []);
 
   return (
     <AppWrapper>
@@ -125,6 +147,26 @@ export default function Home() {
               className={`text-sm hover:underline ${stats.pendingChangeRequests > 0 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-accent'}`}
             >
               {stats.pendingChangeRequests > 0 ? 'Revisar peticiones pendientes →' : 'Ver peticiones de cambio →'}
+            </Link>
+          </div>
+
+          <div className={`bg-card border rounded-lg p-6 ${pendingAbsences > 0 ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Ausencias Pendientes</p>
+                <p className={`text-3xl font-bold ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>
+                  {absenceLoading || stats.loading ? "..." : pendingAbsences}
+                </p>
+              </div>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${pendingAbsences > 0 ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-accent/10'}`}>
+                <AiOutlineCalendar className={`text-2xl ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`} />
+              </div>
+            </div>
+            <Link
+              href="/absences"
+              className={`text-sm hover:underline ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-accent'}`}
+            >
+              {pendingAbsences > 0 ? 'Revisar ausencias pendientes →' : 'Ver ausencias →'}
             </Link>
           </div>
 
@@ -236,6 +278,47 @@ export default function Home() {
               <div>
                 <p className="font-medium text-foreground">Ver Informes</p>
                 <p className="text-sm text-muted-foreground">Informes de jornada y cumplimiento</p>
+              </div>
+            </Link>
+
+            <Link
+              href="/absences"
+              className={`flex items-center gap-3 p-4 border rounded-lg transition-colors ${
+                pendingAbsences > 0
+                  ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/20'
+                  : 'border-border hover:bg-accent/5 hover:border-accent'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                pendingAbsences > 0 ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-accent/10'
+              }`}>
+                <AiOutlineCalendar className={`text-xl ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`} />
+              </div>
+              <div>
+                <p className={`font-medium ${pendingAbsences > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-foreground'}`}>
+                  Ausencias y Vacaciones
+                  {pendingAbsences > 0 && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
+                      {pendingAbsences}
+                    </span>
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {pendingAbsences > 0 ? 'Hay solicitudes por revisar' : 'Gestionar solicitudes'}
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              href="/absences/calendar"
+              className="flex items-center gap-3 p-4 border border-border rounded-lg hover:bg-accent/5 hover:border-accent transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <AiOutlineCalendar className="text-xl text-accent" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Calendario de Equipo</p>
+                <p className="text-sm text-muted-foreground">Vista calendario de ausencias</p>
               </div>
             </Link>
           </div>

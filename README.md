@@ -24,6 +24,11 @@ Panel de administración web para OpenJornada - Sistema de gestión de registros
   - Historial de SMS enviados con filtros por fecha, estado y trabajador
   - Dashboard con estado del proveedor, créditos y estadísticas
   - Opt-out individual por trabajador desde la edición del perfil
+- **Gestión de ausencias y vacaciones**: Aprobación y seguimiento de solicitudes (módulo opcional por empresa)
+  - Lista y detalle de solicitudes con aprobar/rechazar (avisos y bloqueos de validación)
+  - Calendario de equipo para ver quién está fuera y descarga de justificantes
+  - Configuración de la política y su catálogo de tipos de ausencia
+  - Casilla "Habilitar gestión de vacaciones" en la ficha de empresa
 
 ## Tecnologías
 
@@ -269,6 +274,14 @@ El diseño utiliza los mismos colores que la landing page de OpenJornada:
 - `GET /api/sms/stats` - Estadísticas de envío
 - `GET /api/sms/history` - Historial de SMS
 - `POST /api/workers/{id}/sms/send` - Enviar SMS a trabajador
+- `GET /api/absence-policies/{company_id}` - Obtener la política de ausencias de la empresa
+- `PUT /api/absence-policies/{company_id}` - Crear/actualizar la política y su catálogo de tipos
+- `GET /api/absence-policies/{company_id}/types` - Catálogo de tipos de la empresa
+- `GET /api/absences/` - Listar solicitudes (filtros: `company_id` obligatorio, `status`, `worker_id`, `start_date`, `end_date`)
+- `GET /api/absences/{id}` - Detalle de solicitud (incluye `validation_errors` si está pendiente)
+- `PATCH /api/absences/{id}` - Aprobar/rechazar solicitud
+- `GET /api/absences/calendar` - Calendario de equipo (vista admin)
+- `GET /api/absences/attachments/{attachment_id}` - Descargar justificante
 
 ## Desarrollo
 

@@ -24,6 +24,11 @@ Web administration panel for OpenJornada - A work time tracking and management s
   - SMS history with filters by date, status, and worker
   - Dashboard with provider status, credits, and statistics
   - Individual opt-out per worker from the profile editor
+- **Absence and leave management**: Request approval and tracking (optional per-company module)
+  - Request list and detail with approve/reject (validation warnings and blocks)
+  - Team calendar to see who is out and supporting-document download
+  - Policy configuration and its absence-type catalog
+  - "Enable leave management" checkbox in the company profile
 
 ## Technologies
 
@@ -269,6 +274,14 @@ The design uses the same colors as the OpenJornada landing page:
 - `GET /api/sms/stats` - Sending statistics
 - `GET /api/sms/history` - SMS history
 - `POST /api/workers/{id}/sms/send` - Send SMS to worker
+- `GET /api/absence-policies/{company_id}` - Get the company's absence policy
+- `PUT /api/absence-policies/{company_id}` - Create/update the policy and its type catalog
+- `GET /api/absence-policies/{company_id}/types` - Company type catalog
+- `GET /api/absences/` - List requests (filters: `company_id` required, `status`, `worker_id`, `start_date`, `end_date`)
+- `GET /api/absences/{id}` - Request detail (includes `validation_errors` if pending)
+- `PATCH /api/absences/{id}` - Approve/reject request
+- `GET /api/absences/calendar` - Team calendar (admin view)
+- `GET /api/absences/attachments/{attachment_id}` - Download supporting document
 
 ## Development
 
