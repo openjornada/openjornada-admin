@@ -16,11 +16,13 @@ export default function EditCompanyPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
+  const [absenceManagementEnabled, setAbsenceManagementEnabled] = useState(false);
 
   const loadCompany = async () => {
     try {
       const company: Company = await apiClient.getCompany(companyId);
       setName(company.name);
+      setAbsenceManagementEnabled(company.absence_management_enabled);
     } catch (error) {
       console.error("Error loading company:", error);
       toast.error("Error al cargar la empresa");
@@ -54,7 +56,10 @@ export default function EditCompanyPage() {
     setSaving(true);
 
     try {
-      await apiClient.updateCompany(companyId, { name: name.trim() });
+      await apiClient.updateCompany(companyId, {
+        name: name.trim(),
+        absence_management_enabled: absenceManagementEnabled,
+      });
       toast.success("Empresa actualizada correctamente");
       router.push("/companies");
     } catch (error) {
@@ -118,6 +123,22 @@ export default function EditCompanyPage() {
                 Nombre identificativo de la empresa (mínimo 2 caracteres)
               </p>
             </div>
+
+            <div className="flex items-center gap-3 pt-2 border-t border-border">
+              <input
+                type="checkbox"
+                id="absence_management_enabled"
+                checked={absenceManagementEnabled}
+                onChange={(e) => setAbsenceManagementEnabled(e.target.checked)}
+                className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
+              />
+              <label htmlFor="absence_management_enabled" className="text-sm font-medium text-foreground">
+                Habilitar gestión de vacaciones
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-4">
+              Activa el módulo de ausencias y vacaciones (solicitudes, calendario y saldo) para esta empresa.
+            </p>
 
             <div className="flex gap-4 pt-4">
               <button

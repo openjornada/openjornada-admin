@@ -172,3 +172,17 @@ export const getCurrentMonthRange = (): { start: string; end: string } => {
     end: `${year}-${month}-${day}`,
   };
 };
+
+/**
+ * Devuelve el primer día del mes actual y el 31 de diciembre del año actual
+ * como cadenas YYYY-MM-DD.
+ */
+export const getCurrentMonthToYearEndRange = (): { start: string; end: string } => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return {
+    start: `${year}-${month}-01`,
+    end: `${year}-12-31`,
+  };
+};

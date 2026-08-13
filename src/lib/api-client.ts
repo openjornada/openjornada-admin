@@ -156,6 +156,7 @@ interface Company {
   updated_at?: string;
   deleted_at?: string;
   deleted_by?: string;
+  absence_management_enabled: boolean;
 }
 
 interface CreateCompanyData {
@@ -164,6 +165,7 @@ interface CreateCompanyData {
 
 interface UpdateCompanyData {
   name?: string;
+  absence_management_enabled?: boolean;
 }
 
 interface Incident {
@@ -357,6 +359,112 @@ interface UpdateChangeRequestData {
   status: "accepted" | "rejected";
   admin_internal_notes?: string;
   admin_public_comment?: string;
+}
+
+// Absences & vacation management types
+interface AbsenceBlackoutPeriod {
+  name: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;
+}
+
+interface AbsenceType {
+  code: string;
+  name: string;
+  deducts_balance: boolean;
+  is_paid: boolean;
+  requires_attachment: boolean;
+  max_days?: number | null;
+  color: string;
+}
+
+interface AbsencePolicy {
+  id: string;
+  company_id: string;
+  annual_vacation_days: number;
+  computation: "business_days" | "calendar_days";
+  reference_year: "calendar" | "hire_date";
+  min_advance_days: number;
+  allow_half_day: boolean;
+  allow_hourly: boolean;
+  max_overlap_per_company: number | null;
+  blackout_periods: AbsenceBlackoutPeriod[];
+  absence_types: AbsenceType[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface UpdateAbsencePolicyData {
+  annual_vacation_days?: number;
+  computation?: "business_days" | "calendar_days";
+  reference_year?: "calendar" | "hire_date";
+  min_advance_days?: number;
+  allow_half_day?: boolean;
+  allow_hourly?: boolean;
+  max_overlap_per_company?: number | null;
+  blackout_periods?: AbsenceBlackoutPeriod[];
+  absence_types?: AbsenceType[];
+}
+
+interface AbsenceValidationIssue {
+  code:
+    | "OVERLAP_ABSENCE"
+    | "BLACKOUT_PERIOD"
+    | "MIN_ADVANCE_NOT_MET"
+    | "INSUFFICIENT_BALANCE"
+    | "ATTACHMENT_REQUIRED"
+    | "MAX_OVERLAP_EXCEEDED"
+    | "TIME_RECORDS_EXIST";
+  message: string;
+  blocking: boolean;
+}
+
+interface Absence {
+  id: string;
+  company_id: string;
+  company_name: string;
+  worker_id: string;
+  worker_email: string;
+  worker_first_name: string;
+  worker_last_name: string;
+  absence_type_code: string;
+  absence_type_name: string;
+  deducts_balance: boolean;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;
+  is_partial: boolean;
+  day_portion: "full" | "morning" | "afternoon";
+  start_time?: string | null;
+  end_time?: string | null;
+  worker_comment?: string | null;
+  attachment_id?: string | null;
+  days_computed: number;
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  reviewed_by_admin_id?: string | null;
+  reviewed_by_admin_email?: string | null;
+  reviewed_at?: string | null;
+  admin_internal_notes?: string | null;
+  admin_public_comment?: string | null;
+  validation_errors?: AbsenceValidationIssue[] | null;
+}
+
+interface UpdateAbsenceData {
+  status: "accepted" | "rejected";
+  admin_internal_notes?: string;
+  admin_public_comment?: string;
+}
+
+interface AbsenceCalendarEntry {
+  absence_id: string;
+  worker_id: string;
+  worker_name: string;
+  absence_type_code: string;
+  absence_type_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
 }
 
 interface GDPRExportData {
@@ -726,6 +834,64 @@ class ApiClient {
     return response.data;
   }
 
+  // Absences endpoints
+  async getAbsences(params: {
+    company_id: string;
+    status?: "pending" | "accepted" | "rejected" | "cancelled";
+    worker_id?: string;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<Absence[]> {
+    const response = await this.client.get<Absence[]>("/api/absences/", { params });
+    return response.data;
+  }
+
+  async getAbsence(id: string): Promise<Absence> {
+    const response = await this.client.get<Absence>(`/api/absences/${id}`);
+    return response.data;
+  }
+
+  async updateAbsence(id: string, data: UpdateAbsenceData): Promise<Absence> {
+    const response = await this.client.patch<Absence>(`/api/absences/${id}`, data);
+    return response.data;
+  }
+
+  async getAbsenceCalendar(params: { company_id: string; start_date: string; end_date: string }): Promise<AbsenceCalendarEntry[]> {
+    const response = await this.client.get<AbsenceCalendarEntry[]>("/api/absences/calendar", { params });
+    return response.data;
+  }
+
+  async downloadAbsenceAttachment(attachmentId: string): Promise<void> {
+    const response = await this.client.get(`/api/absences/attachments/${attachmentId}`, {
+      responseType: "blob",
+    });
+
+    const contentDisposition = response.headers["content-disposition"] || "";
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    const filename = filenameMatch ? filenameMatch[1] : "justificante";
+
+    const blob = response.data;
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  // Absence policy endpoints
+  async getAbsencePolicy(companyId: string): Promise<AbsencePolicy> {
+    const response = await this.client.get<AbsencePolicy>(`/api/absence-policies/${companyId}`);
+    return response.data;
+  }
+
+  async updateAbsencePolicy(companyId: string, data: UpdateAbsencePolicyData): Promise<AbsencePolicy> {
+    const response = await this.client.put<AbsencePolicy>(`/api/absence-policies/${companyId}`, data);
+    return response.data;
+  }
+
   // GDPR endpoints
   async exportWorkerGDPRData(workerId: string): Promise<GDPRExportData> {
     const response = await this.client.get<GDPRExportData>(`/api/gdpr/worker/${workerId}/export`);
@@ -835,7 +1001,7 @@ class ApiClient {
     const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
     const filename = filenameMatch ? filenameMatch[1] : `informe_${params.year}-${String(params.month).padStart(2, "0")}.${params.format || "pdf"}`;
 
-    const blob = new Blob([response.data]);
+    const blob = response.data;
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -856,7 +1022,7 @@ class ApiClient {
     const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
     const filename = filenameMatch ? filenameMatch[1] : `horas_extra_${params.year}-${String(params.month).padStart(2, "0")}.csv`;
 
-    const blob = new Blob([response.data]);
+    const blob = response.data;
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -980,6 +1146,14 @@ export type {
   UpdatePauseTypeData,
   ChangeRequest,
   UpdateChangeRequestData,
+  AbsenceBlackoutPeriod,
+  AbsenceType,
+  AbsencePolicy,
+  UpdateAbsencePolicyData,
+  AbsenceValidationIssue,
+  Absence,
+  UpdateAbsenceData,
+  AbsenceCalendarEntry,
   BackupSchedule,
   S3ConfigInput,
   SFTPConfigInput,

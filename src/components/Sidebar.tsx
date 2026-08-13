@@ -1,17 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/api-client";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const [absenceModuleAvailable, setAbsenceModuleAvailable] = useState(false);
+
+  useEffect(() => {
+    // No existe un concepto de "empresa activa" en el admin: se muestra la
+    // entrada si al menos una empresa tiene el módulo de ausencias activo.
+    apiClient
+      .getCompanies()
+      .then((companies) => {
+        setAbsenceModuleAvailable(companies.some((c) => c.absence_management_enabled));
+      })
+      .catch(() => {
+        // Silencioso: si falla, simplemente no se muestra la entrada.
+      });
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(path + "/");
@@ -235,6 +250,22 @@ export default function Sidebar() {
                 <span>Informes</span>
               </Link>
             </li>
+
+            {absenceModuleAvailable && (
+              <li>
+                <Link
+                  href="/absences"
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    isActive("/absences")
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <AiOutlineCalendar className="text-xl" />
+                  <span>Ausencias y vacaciones</span>
+                </Link>
+              </li>
+            )}
 
             <li>
               <Link
