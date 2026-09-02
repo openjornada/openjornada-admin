@@ -19,7 +19,7 @@ import {
   AiOutlineFileText,
 } from "react-icons/ai";
 
-const MAX_ROWS = 500;
+const MAX_ROWS = 200;
 const REQUIRED_COLUMNS = ["first_name", "last_name", "email", "id_number", "empresas"];
 const CSV_COLUMNS = ["first_name", "last_name", "email", "phone_number", "id_number", "empresas", "default_timezone"];
 
