@@ -6,7 +6,7 @@ import SubscriptionSettings from "@/components/SubscriptionSettings";
 import { apiClient } from "@/lib/api-client";
 import type { Settings, BackupConfigInput, BackupSchedule } from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { AiOutlineSetting, AiOutlineCloudServer, AiOutlineDatabase } from "react-icons/ai";
+import { AiOutlineSetting, AiOutlineCloudServer, AiOutlineDatabase, AiOutlineUpload } from "react-icons/ai";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -315,6 +315,27 @@ export default function SettingsPage() {
 
           {/* Subscription */}
           <SubscriptionSettings />
+
+          {/* Import Workers */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  <AiOutlineUpload className="text-accent" />
+                  Importar trabajadores (CSV)
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Carga varios trabajadores a la vez desde un archivo CSV
+                </p>
+              </div>
+              <Link
+                href="/settings/import-workers"
+                className="text-sm text-accent hover:underline whitespace-nowrap"
+              >
+                Importar →
+              </Link>
+            </div>
+          </div>
 
           {/* Backup Settings */}
           <div className="bg-card border border-border rounded-lg p-6">

@@ -29,6 +29,37 @@ interface CreateWorkerData {
   send_welcome_email?: boolean;
 }
 
+interface WorkerImportRow {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number?: string;
+  id_number: string;
+  company_names: string[];
+  default_timezone?: string;
+}
+
+interface WorkerBulkImportRequest {
+  rows: WorkerImportRow[];
+  dry_run: boolean;
+  send_welcome_email: boolean;
+}
+
+interface WorkerImportRowResult {
+  row_index: number;
+  status: "created" | "skipped_duplicate" | "error";
+  detail: string | null;
+  email: string;
+}
+
+interface WorkerBulkImportResponse {
+  total: number;
+  created: number;
+  skipped: number;
+  errors: number;
+  results: WorkerImportRowResult[];
+}
+
 interface UpdateWorkerData {
   first_name: string;
   last_name: string;
@@ -720,6 +751,11 @@ class ApiClient {
     await this.client.delete(`/api/workers/${id}`);
   }
 
+  async bulkImportWorkers(payload: WorkerBulkImportRequest): Promise<WorkerBulkImportResponse> {
+    const response = await this.client.post<WorkerBulkImportResponse>("/api/workers/bulk-import", payload);
+    return response.data;
+  }
+
   // Time records endpoints
   async getTimeRecords(params?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string }): Promise<TimeRecord[]> {
     const response = await this.client.get("/api/time-records/", { params });
@@ -1133,6 +1169,10 @@ export type {
   CreateWorkerData,
   UpdateWorkerData,
   Worker,
+  WorkerImportRow,
+  WorkerBulkImportRequest,
+  WorkerImportRowResult,
+  WorkerBulkImportResponse,
   TimeRecord,
   Company,
   CreateCompanyData,
