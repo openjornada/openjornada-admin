@@ -50,7 +50,7 @@ const toImportRows = (csvRows: CsvRow[]): WorkerImportRow[] =>
     first_name: (row.first_name ?? "").trim(),
     last_name: (row.last_name ?? "").trim(),
     email: (row.email ?? "").trim(),
-    phone_number: (row.phone_number ?? "").trim() || undefined,
+    phone_number: (row.phone_number ?? "").trim(),
     id_number: (row.id_number ?? "").trim(),
     company_names: parseColumns(row),
     default_timezone: (row.default_timezone ?? "").trim() || "UTC",

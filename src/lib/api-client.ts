@@ -33,7 +33,7 @@ interface WorkerImportRow {
   first_name: string;
   last_name: string;
   email: string;
-  phone_number?: string;
+  phone_number: string;
   id_number: string;
   company_names: string[];
   default_timezone?: string;
@@ -49,7 +49,7 @@ interface WorkerImportRowResult {
   row_index: number;
   status: "created" | "skipped_duplicate" | "error";
   detail: string | null;
-  email: string;
+  email: string | null;
 }
 
 interface WorkerBulkImportResponse {
