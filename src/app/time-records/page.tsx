@@ -15,6 +15,7 @@ interface FichajeCreatedPayload {
   worker_name?: string;
   record_type?: "entry" | "exit" | "pause_start" | "pause_end";
   timestamp?: string; // ISO UTC
+  duration_minutes?: number; // solo en exit/pause_end; ausente en entry/pause_start
   company_id?: string; // authoritative id; older frames may omit it
   company_name?: string;
 }
@@ -138,6 +139,7 @@ export default function TimeRecordsPage() {
       worker_id_number: "", // not available in the realtime payload
       record_type: payload.record_type,
       timestamp: payload.timestamp,
+      duration_minutes: payload.duration_minutes,
       company_id:
         payload.company_id ?? companies.find((c) => c.name === payload.company_name)?.id,
       company_name: payload.company_name,
