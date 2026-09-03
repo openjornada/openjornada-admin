@@ -618,6 +618,32 @@ interface SubscriptionPortal {
   url: string;
 }
 
+// Realtime notifications types
+interface NotificationItem {
+  id: string;
+  type: string;
+  company_id: string;
+  payload: Record<string, unknown>;
+  target_role: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+interface NotificationListResponse {
+  items: NotificationItem[];
+  unread_count: number;
+}
+
+interface RealtimeEvent {
+  type: string;
+  payload: Record<string, unknown>;
+  // Top-level notification metadata, present only on notification events.
+  // Optional so non-notification frames (and older ones) still type-check.
+  notification_id?: string;
+  company_id?: string;
+  created_at?: string; // ISO8601 UTC
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -1159,6 +1185,17 @@ class ApiClient {
     const response = await this.client.get<SubscriptionPortal>("/api/subscription/portal");
     return response.data;
   }
+
+  // Notifications endpoints
+  async getNotifications(params?: { unread?: boolean }): Promise<NotificationListResponse> {
+    const response = await this.client.get<NotificationListResponse>("/api/notifications", { params });
+    return response.data;
+  }
+
+  async markNotificationsRead(ids: string[]): Promise<{ updated: number }> {
+    const response = await this.client.post<{ updated: number }>("/api/notifications/mark-read", { ids });
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -1226,4 +1263,7 @@ export type {
   SmsTemplateUpdate,
   SubscriptionStatus,
   SubscriptionPortal,
+  NotificationItem,
+  NotificationListResponse,
+  RealtimeEvent,
 };
