@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RealtimeProvider } from "@/contexts/RealtimeProvider";
 import { Toaster } from "react-hot-toast";
 import { appConfig } from "@/lib/config";
 
@@ -33,8 +34,10 @@ export default function RootLayout({
     <html lang="es" className="light">
       <body className={`${inter.variable} font-sans antialiased`}>
         <AuthProvider>
-          {children}
-          <Toaster position="top-right" />
+          <RealtimeProvider>
+            {children}
+            <Toaster position="top-right" />
+          </RealtimeProvider>
         </AuthProvider>
       </body>
     </html>

@@ -2,10 +2,22 @@
 
 import { useState, useEffect } from "react";
 import AppWrapper from "@/components/AppWrapper";
-import { apiClient, type TimeRecord, type Company } from "@/lib/api-client";
+import { apiClient, type TimeRecord, type Company, type RealtimeEvent } from "@/lib/api-client";
+import { useRealtime, useRealtimeConnection } from "@/contexts/RealtimeProvider";
 import toast from "react-hot-toast";
 import { AiOutlineClockCircle, AiOutlineDownload } from "react-icons/ai";
 import { formatToLocalTime, getCurrentMonthRange } from "@/utils/dateFormatters";
+
+// Payload of the "fichaje.created" realtime event (subset of TimeRecord fields).
+interface FichajeCreatedPayload {
+  time_record_id?: string;
+  worker_id?: string;
+  worker_name?: string;
+  record_type?: "entry" | "exit" | "pause_start" | "pause_end";
+  timestamp?: string; // ISO UTC
+  company_id?: string; // authoritative id; older frames may omit it
+  company_name?: string;
+}
 
 export default function TimeRecordsPage() {
   const [records, setRecords] = useState<TimeRecord[]>([]);
@@ -57,13 +69,17 @@ export default function TimeRecordsPage() {
     }
   };
 
-  const handleFilter = () => {
+  const buildCurrentFilters = () => {
     const filters: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string } = {};
     if (startDate) filters.start_date = startDate;
     if (endDate) filters.end_date = endDate;
     if (selectedCompanyId) filters.company_id = selectedCompanyId;
     if (searchTerm) filters.worker_name = searchTerm;
-    loadRecords(filters);
+    return filters;
+  };
+
+  const handleFilter = () => {
+    loadRecords(buildCurrentFilters());
   };
 
   const handleClearFilters = () => {
@@ -84,6 +100,63 @@ export default function TimeRecordsPage() {
 
   // Records are now filtered on the backend
   const filteredRecords = records;
+
+  // Live insert on "fichaje.created" (no refetch): the list is ordered by
+  // created_at desc, so a just-created record goes on top. Only inserted if it
+  // passes the same filters currently applied and is not already present.
+  useRealtime("fichaje.created", (event: RealtimeEvent) => {
+    const payload = event.payload as FichajeCreatedPayload;
+    if (!payload.time_record_id || !payload.timestamp || !payload.record_type) return;
+
+    // Company filter: prefer the authoritative company_id in the payload; fall
+    // back to resolving the selected company by name only for older frames that
+    // don't carry the id yet (back-compat).
+    if (selectedCompanyId) {
+      if (payload.company_id) {
+        if (payload.company_id !== selectedCompanyId) return;
+      } else {
+        const selected = companies.find((c) => c.id === selectedCompanyId);
+        if (!selected || selected.name !== payload.company_name) return;
+      }
+    }
+    // Date filter: both sides compare UTC calendar dates. getTimeRecords sends no
+    // timezone param, so the backend filters with its UTC default and this slice(0,10)
+    // (UTC) matches it. If a non-UTC tz is ever passed to getTimeRecords here, this
+    // comparison must switch to the same tz (behavioral coupling, keep in sync).
+    const utcDate = payload.timestamp.slice(0, 10); // YYYY-MM-DD in UTC
+    if (startDate && utcDate < startDate) return;
+    if (endDate && utcDate > endDate) return;
+    // Worker name filter: case-insensitive partial match, as in the backend regex.
+    if (searchTerm && !payload.worker_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return;
+    }
+
+    const newRecord: TimeRecord = {
+      id: payload.time_record_id,
+      worker_id: payload.worker_id ?? "",
+      worker_name: payload.worker_name ?? "",
+      worker_id_number: "", // not available in the realtime payload
+      record_type: payload.record_type,
+      timestamp: payload.timestamp,
+      company_id:
+        payload.company_id ?? companies.find((c) => c.name === payload.company_name)?.id,
+      company_name: payload.company_name,
+    };
+
+    setRecords((prev) =>
+      prev.some((r) => r.id === newRecord.id) ? prev : [newRecord, ...prev]
+    );
+  });
+
+  // On successful stream (re)opens (throttled by the provider), refetch with the
+  // filters currently applied so events dropped under backpressure (or across a
+  // cut) can't leave the list stale. The hook keeps this closure in a ref
+  // refreshed each render, so buildCurrentFilters/loadRecords always see fresh
+  // state. The extra fetch on the very first open is idempotent with the initial
+  // load above.
+  useRealtimeConnection(() => {
+    loadRecords(buildCurrentFilters());
+  });
 
   const getRecordTypeLabel = (type: string) => {
     switch (type) {
