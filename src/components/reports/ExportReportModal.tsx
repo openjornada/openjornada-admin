@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiClient } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { AiOutlineClose, AiOutlineDownload, AiOutlineLoading3Quarters } from "react-icons/ai";
@@ -26,6 +27,8 @@ export default function ExportReportModal({
   companies,
   defaultCompanyId,
 }: ExportReportModalProps) {
+  const t = useTranslations("reports.export");
+  const tm = useTranslations("common.months");
   const [companyId, setCompanyId] = useState(defaultCompanyId ?? companies[0]?.id ?? "");
   const [year, setYear] = useState(() => getPreviousMonthDefaults().year);
   const [month, setMonth] = useState(() => getPreviousMonthDefaults().month);
@@ -55,11 +58,11 @@ export default function ExportReportModal({
 
   const handleDownload = async () => {
     if (!companyId) {
-      toast.error("Selecciona una empresa");
+      toast.error(t("selectCompanyError"));
       return;
     }
     if (year < 2020 || year > CURRENT_YEAR) {
-      toast.error("Año no válido");
+      toast.error(t("invalidYearError"));
       return;
     }
     setDownloading(true);
@@ -71,10 +74,10 @@ export default function ExportReportModal({
         format,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-      toast.success(`Descargado: ${fileName}`);
+      toast.success(t("downloaded", { file: fileName }));
       onClose();
     } catch {
-      toast.error("Error al generar el informe. Inténtalo de nuevo.");
+      toast.error(t("generateError"));
     } finally {
       setDownloading(false);
     }
@@ -98,12 +101,12 @@ export default function ExportReportModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 id="export-modal-title" className="text-lg font-semibold text-foreground">
-            Exportar informe de jornada
+            {t("modalTitle")}
           </h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted/50"
-            aria-label="Cerrar"
+            aria-label={t("close")}
           >
             <AiOutlineClose className="text-xl" />
           </button>
@@ -114,7 +117,7 @@ export default function ExportReportModal({
           {/* Company */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Empresa
+              {t("company")}
             </label>
             <select
               value={companyId}
@@ -133,26 +136,23 @@ export default function ExportReportModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Mes
+                {t("month")}
               </label>
               <select
                 value={month}
                 onChange={(e) => setMonth(Number(e.target.value))}
                 className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
               >
-                {[
-                  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-                ].map((name, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {name}
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {tm(String(m))}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Año
+                {t("year")}
               </label>
               <input
                 type="number"
@@ -168,7 +168,7 @@ export default function ExportReportModal({
           {/* Format */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Formato
+              {t("format")}
             </label>
             <div className="flex gap-3">
               {(["pdf", "csv"] as const).map((f) => (
@@ -197,8 +197,7 @@ export default function ExportReportModal({
 
         {/* Legal banner */}
         <div className="mt-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-          Este informe incluye el historial completo de modificaciones aprobadas.
-          Guarda una copia firmada en los archivos de la empresa (obligatorio art. 34.9 ET, conservación 4 años).
+          {t("legalNote")}
         </div>
 
         {/* Download button */}
@@ -210,12 +209,12 @@ export default function ExportReportModal({
           {downloading ? (
             <>
               <AiOutlineLoading3Quarters className="animate-spin text-base" />
-              Generando...
+              {t("generating")}
             </>
           ) : (
             <>
               <AiOutlineDownload className="text-base" />
-              Descargar informe
+              {t("download")}
             </>
           )}
         </button>

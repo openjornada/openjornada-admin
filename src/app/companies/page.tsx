@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, type Company } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlinePlus, AiOutlineEdit, AiOutlineDelete, AiOutlineBank } from "react-icons/ai";
 
 export default function CompaniesPage() {
+  const t = useTranslations("companies");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -16,6 +21,7 @@ export default function CompaniesPage() {
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCompanies = async () => {
@@ -24,14 +30,14 @@ export default function CompaniesPage() {
       setCompanies(data);
     } catch (error) {
       console.error("Error loading companies:", error);
-      toast.error("Error al cargar las empresas");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`¿Está seguro de eliminar la empresa "${name}"?\n\nNota: Esto no eliminará los trabajadores asociados.`)) {
+    if (!confirm(t("confirmDelete", { name }))) {
       return;
     }
 
@@ -39,19 +45,18 @@ export default function CompaniesPage() {
 
     try {
       await apiClient.deleteCompany(id);
-      toast.success("Empresa eliminada correctamente");
+      toast.success(t("deleted"));
       loadCompanies();
     } catch (error) {
       console.error("Error deleting company:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al eliminar la empresa";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("deleteError")));
     } finally {
       setDeletingId(null);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -66,16 +71,16 @@ export default function CompaniesPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <AiOutlineBank />
-              Empresas
+              {t("title")}
             </h1>
-            <p className="text-muted-foreground">Gestiona las empresas del sistema</p>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
           <Link
             href="/companies/new"
             className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
           >
             <AiOutlinePlus className="text-xl" />
-            <span>Nueva Empresa</span>
+            <span>{t("new")}</span>
           </Link>
         </div>
 
@@ -84,18 +89,18 @@ export default function CompaniesPage() {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando empresas...</p>
+              <p className="text-muted-foreground">{t("loading")}</p>
             </div>
           ) : companies.length === 0 ? (
             <div className="p-8 text-center">
               <AiOutlineBank className="text-6xl text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">No hay empresas registradas</p>
+              <p className="text-muted-foreground mb-4">{t("empty")}</p>
               <Link
                 href="/companies/new"
                 className="inline-flex items-center gap-2 text-accent hover:underline"
               >
                 <AiOutlinePlus />
-                <span>Crear primera empresa</span>
+                <span>{t("createFirst")}</span>
               </Link>
             </div>
           ) : (
@@ -104,13 +109,13 @@ export default function CompaniesPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Nombre
+                      {tc("name")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Fecha de Creación
+                      {t("createdCol")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
+                      {tc("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -128,7 +133,7 @@ export default function CompaniesPage() {
                           <Link
                             href={`/companies/${company.id}/edit`}
                             className="text-accent hover:text-accent/80 p-2"
-                            title="Editar"
+                            title={tc("edit")}
                           >
                             <AiOutlineEdit className="text-xl" />
                           </Link>
@@ -136,7 +141,7 @@ export default function CompaniesPage() {
                             onClick={() => handleDelete(company.id, company.name)}
                             disabled={deletingId === company.id}
                             className="text-destructive hover:text-destructive/80 p-2 disabled:opacity-50"
-                            title="Eliminar"
+                            title={tc("delete")}
                           >
                             <AiOutlineDelete className="text-xl" />
                           </button>
@@ -153,7 +158,7 @@ export default function CompaniesPage() {
         {/* Summary */}
         {companies.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Total: {companies.length} empresa{companies.length !== 1 ? "s" : ""}
+            {t("totalCount", { count: companies.length })}
           </div>
         )}
       </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, CompanyMonthlySummary, WorkerMonthlySummary, Company } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineBarChart, AiOutlineDownload } from "react-icons/ai";
 import StatCard from "@/components/reports/StatCard";
 import ReportFilters from "@/components/reports/ReportFilters";
@@ -13,6 +15,7 @@ import ExportReportModal from "@/components/reports/ExportReportModal";
 import { getMonthName, formatMinutesToHoursMinutes } from "@/utils/dateFormatters";
 
 export default function CompanyReportPage() {
+  const t = useTranslations("reports");
   const [report, setReport] = useState<CompanyMonthlySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -26,8 +29,9 @@ export default function CompanyReportPage() {
 
   useEffect(() => {
     apiClient.getCompanies().then(setCompanies).catch(() => {
-      toast.error("No se pudieron cargar las empresas");
+      toast.error(t("loadCompaniesError"));
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilter = async (filters: {
@@ -44,7 +48,7 @@ export default function CompanyReportPage() {
       setReport(data);
     } catch (error) {
       console.error("Error loading company monthly report:", error);
-      toast.error("Error al cargar el informe mensual");
+      toast.error(getApiErrorMessage(error, t("loadError")));
       setReport(null);
     } finally {
       setLoading(false);
@@ -58,10 +62,10 @@ export default function CompanyReportPage() {
 
     try {
       await apiClient.exportMonthlyReport({ ...currentFilters, format });
-      toast.success(`Informe exportado como ${format.toUpperCase()}`);
+      toast.success(t("exportedAs", { format: format.toUpperCase() }));
     } catch (error) {
       console.error("Error exporting report:", error);
-      toast.error("Error al exportar el informe");
+      toast.error(getApiErrorMessage(error, t("exportError")));
     } finally {
       setExporting(false);
     }
@@ -80,9 +84,9 @@ export default function CompanyReportPage() {
     : 0;
 
   const signatureLabel = (status: WorkerMonthlySummary["signature_status"]) => {
-    if (status === "signed") return "Firmado";
-    if (status === "pending") return "Pendiente";
-    return "No requerida";
+    if (status === "signed") return t("signed");
+    if (status === "pending") return t("pending");
+    return t("notRequired");
   };
 
   return (
@@ -95,16 +99,16 @@ export default function CompanyReportPage() {
             className="inline-flex items-center gap-2 text-accent hover:underline mb-4"
           >
             <AiOutlineArrowLeft />
-            <span>Volver a informes</span>
+            <span>{t("backToReports")}</span>
           </Link>
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                 <AiOutlineBarChart />
-                Informe Mensual de Empresa
+                {t("companyReportPageTitle")}
               </h1>
               <p className="text-muted-foreground">
-                Resumen mensual de horas trabajadas por empresa
+                {t("companyReportPageSubtitle")}
               </p>
             </div>
             <button
@@ -112,7 +116,7 @@ export default function CompanyReportPage() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors shrink-0"
             >
               <AiOutlineDownload className="text-base" />
-              Exportar informe de jornada
+              {t("exportReport")}
             </button>
           </div>
         </div>
@@ -124,7 +128,7 @@ export default function CompanyReportPage() {
         {loading && (
           <div className="bg-card border border-border rounded-lg p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Generando informe...</p>
+            <p className="text-muted-foreground">{t("generating")}</p>
           </div>
         )}
 
@@ -146,25 +150,25 @@ export default function CompanyReportPage() {
             {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
-                title="Total Trabajadores"
+                title={t("statTotalWorkers")}
                 value={report.total_workers}
-                subtitle="trabajadores con actividad"
+                subtitle={t("statWorkersActive")}
               />
               <StatCard
-                title="Total Horas"
+                title={t("statTotalHours")}
                 value={formatMinutesToHoursMinutes(totalHours)}
-                subtitle="horas trabajadas en el mes"
+                subtitle={t("statHoursWorked")}
               />
               <StatCard
-                title="Total Horas Extra"
+                title={t("statTotalOvertime")}
                 value={formatMinutesToHoursMinutes(totalOvertime)}
-                subtitle="horas extra acumuladas"
+                subtitle={t("statOvertimeAccumulated")}
                 variant={totalOvertime > 0 ? "warning" : "default"}
               />
               <StatCard
-                title="Total Pausas"
+                title={t("statTotalPauses")}
                 value={formatMinutesToHoursMinutes(totalPauses)}
-                subtitle="tiempo de pausas en el mes"
+                subtitle={t("statPauseTime")}
               />
             </div>
 
@@ -173,7 +177,7 @@ export default function CompanyReportPage() {
               {report.workers.length === 0 ? (
                 <div className="p-8 text-center">
                   <p className="text-muted-foreground">
-                    No hay datos de trabajadores para este periodo
+                    {t("noWorkerData")}
                   </p>
                 </div>
               ) : (
@@ -182,25 +186,25 @@ export default function CompanyReportPage() {
                     <thead className="bg-muted">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Trabajador
+                          {t("colWorker")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          DNI
+                          {t("colDni")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Días
+                          {t("colDays")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Horas Trabajadas
+                          {t("colWorkedHours")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Pausas
+                          {t("colPauses")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Horas Extra
+                          {t("colOvertime")}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                          Firma
+                          {t("colSignature")}
                         </th>
                       </tr>
                     </thead>
@@ -252,7 +256,7 @@ export default function CompanyReportPage() {
           <div className="bg-card border border-border rounded-lg p-8 text-center">
             <AiOutlineBarChart className="text-5xl text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              Selecciona una empresa, año y mes para generar el informe
+              {t("selectCompanyPeriod")}
             </p>
           </div>
         )}

@@ -7,11 +7,13 @@ import { usePathname } from "next/navigation";
 import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiClient } from "@/lib/api-client";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
   const { logout } = useAuth();
   const [absenceModuleAvailable, setAbsenceModuleAvailable] = useState(false);
 
@@ -51,7 +53,7 @@ export default function Sidebar() {
                   <h1 className="text-lg font-bold text-sidebar-foreground">
                     {appConfig.appName}
                   </h1>
-                  <p className="text-xs text-sidebar-foreground/60">Admin Panel</p>
+                  <p className="text-xs text-sidebar-foreground/60">{t("adminPanel")}</p>
                 </div>
               </div>
             ) : (
@@ -59,7 +61,7 @@ export default function Sidebar() {
                 <h1 className="text-xl font-bold text-sidebar-foreground">
                   {appConfig.appName}
                 </h1>
-                <p className="text-xs text-sidebar-foreground/60">Admin Panel</p>
+                <p className="text-xs text-sidebar-foreground/60">{t("adminPanel")}</p>
               </div>
             )}
           </Link>
@@ -78,7 +80,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineHome className="text-xl" />
-                <span>Dashboard</span>
+                <span>{t("dashboard")}</span>
               </Link>
             </li>
 
@@ -92,7 +94,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineUser className="text-xl" />
-                <span>Trabajadores</span>
+                <span>{t("workers")}</span>
               </Link>
             </li>
 
@@ -106,7 +108,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineBank className="text-xl" />
-                <span>Empresas</span>
+                <span>{t("companies")}</span>
               </Link>
             </li>
 
@@ -120,7 +122,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineClockCircle className="text-xl" />
-                <span>Registros de Jornada</span>
+                <span>{t("timeRecords")}</span>
               </Link>
             </li>
 
@@ -134,7 +136,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlinePauseCircle className="text-xl" />
-                <span>Tipos de Pausa</span>
+                <span>{t("pauseTypes")}</span>
               </Link>
             </li>
 
@@ -148,7 +150,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineAlert className="text-xl" />
-                <span>Incidencias</span>
+                <span>{t("incidents")}</span>
               </Link>
             </li>
 
@@ -162,7 +164,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineClockCircle className="text-xl" />
-                <span>Peticiones de Cambio</span>
+                <span>{t("changeRequests")}</span>
               </Link>
             </li>
 
@@ -176,7 +178,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineSafety className="text-xl" />
-                <span>Gestión RGPD</span>
+                <span>{t("gdpr")}</span>
               </Link>
             </li>
 
@@ -190,14 +192,14 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineCloudServer className="text-xl" />
-                <span>Backups</span>
+                <span>{t("backups")}</span>
               </Link>
             </li>
 
             {/* SMS */}
             <li className="pt-4 mt-4 border-t border-sidebar-border">
               <span className="px-3 text-xs font-semibold uppercase text-sidebar-foreground/40 tracking-wider">
-                SMS
+                {t("smsSection")}
               </span>
             </li>
 
@@ -212,7 +214,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineMessage className="text-xl" />
-                <span>Recordatorios SMS</span>
+                <span>{t("smsReminders")}</span>
               </Link>
             </li>
 
@@ -226,14 +228,14 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineClockCircle className="text-xl" />
-                <span>Historial SMS</span>
+                <span>{t("smsHistory")}</span>
               </Link>
             </li>
 
             {/* Cumplimiento */}
             <li className="pt-4 mt-4 border-t border-sidebar-border">
               <span className="px-3 text-xs font-semibold uppercase text-sidebar-foreground/40 tracking-wider">
-                Cumplimiento
+                {t("complianceSection")}
               </span>
             </li>
 
@@ -247,7 +249,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineBarChart className="text-xl" />
-                <span>Informes</span>
+                <span>{t("reports")}</span>
               </Link>
             </li>
 
@@ -262,7 +264,7 @@ export default function Sidebar() {
                   }`}
                 >
                   <AiOutlineCalendar className="text-xl" />
-                  <span>Ausencias y vacaciones</span>
+                  <span>{t("absences")}</span>
                 </Link>
               </li>
             )}
@@ -277,7 +279,7 @@ export default function Sidebar() {
                 }`}
               >
                 <AiOutlineSetting className="text-xl" />
-                <span>Configuración</span>
+                <span>{t("settings")}</span>
               </Link>
             </li>
           </ul>
@@ -290,7 +292,7 @@ export default function Sidebar() {
             onClick={logout}
           >
             <BiLogOut className="text-xl" />
-            <span>Cerrar Sesión</span>
+            <span>{t("logout")}</span>
           </button>
         </div>
       </div>

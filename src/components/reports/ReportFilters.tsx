@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiClient, Company, Worker } from "@/lib/api-client";
 import { getMonthName } from "@/utils/dateFormatters";
 
@@ -23,6 +24,7 @@ export default function ReportFilters({
   onWorkerChange,
   loading = false,
 }: ReportFiltersProps) {
+  const t = useTranslations("reports.filters");
   const now = new Date();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
@@ -90,7 +92,7 @@ export default function ReportFilters({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
-            Empresa
+            {t("company")}
           </label>
           <select
             value={companyId}
@@ -98,7 +100,7 @@ export default function ReportFilters({
             className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             disabled={loadingData}
           >
-            <option value="">Seleccionar empresa</option>
+            <option value="">{t("selectCompany")}</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -107,7 +109,7 @@ export default function ReportFilters({
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
-            Año
+            {t("year")}
           </label>
           <select
             value={year}
@@ -122,7 +124,7 @@ export default function ReportFilters({
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">
-            Mes
+            {t("month")}
           </label>
           <select
             value={month}
@@ -138,14 +140,14 @@ export default function ReportFilters({
         {showWorkerFilter && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Trabajador
+              {t("worker")}
             </label>
             <select
               value={workerId}
               onChange={(e) => setWorkerId(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              <option value="">Todos</option>
+              <option value="">{t("allWorkers")}</option>
               {workers.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name || `${w.first_name} ${w.last_name}`} ({w.id_number})
@@ -161,7 +163,7 @@ export default function ReportFilters({
             disabled={!companyId || loading}
             className="w-full md:w-auto px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
-            {loading ? "Cargando..." : "Generar Informe"}
+            {loading ? t("loading") : t("generate")}
           </button>
         </div>
       </div>

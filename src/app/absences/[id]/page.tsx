@@ -2,19 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, Absence } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineCalendar, AiOutlinePaperClip } from "react-icons/ai";
 import { formatToLocalTime } from "@/utils/dateFormatters";
-
-const statusLabels: Record<string, string> = {
-  pending: "Pendiente",
-  accepted: "Aceptada",
-  rejected: "Rechazada",
-  cancelled: "Cancelada",
-};
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -23,13 +18,9 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
-const dayPortionLabels: Record<string, string> = {
-  full: "Día completo",
-  morning: "Mañana",
-  afternoon: "Tarde",
-};
-
 export default function AbsenceDetailPage() {
+  const t = useTranslations("absences");
+  const tc = useTranslations("common");
   const router = useRouter();
   const params = useParams();
   const absenceId = params.id as string;
@@ -55,7 +46,7 @@ export default function AbsenceDetailPage() {
       });
     } catch (error) {
       console.error("Error loading absence:", error);
-      toast.error("Error al cargar la ausencia");
+      toast.error(getApiErrorMessage(error, t("loadOneError")));
       router.push("/absences");
     } finally {
       setLoading(false);
@@ -83,7 +74,7 @@ export default function AbsenceDetailPage() {
       await apiClient.downloadAbsenceAttachment(absence.attachment_id);
     } catch (error) {
       console.error("Error downloading attachment:", error);
-      toast.error("Error al descargar el justificante");
+      toast.error(t("attachmentError"));
     } finally {
       setDownloading(false);
     }
@@ -93,7 +84,7 @@ export default function AbsenceDetailPage() {
     e.preventDefault();
 
     if (absence?.status !== "pending") {
-      toast.error("Esta solicitud ya ha sido procesada");
+      toast.error(t("alreadyProcessed"));
       return;
     }
 
@@ -107,15 +98,14 @@ export default function AbsenceDetailPage() {
       });
 
       setAbsence(updated);
-      toast.success("Ausencia actualizada correctamente");
+      toast.success(t("updated"));
 
       setTimeout(() => {
         router.push("/absences");
       }, 1000);
     } catch (error) {
       console.error("Error updating absence:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al actualizar la ausencia";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("updateError")));
     } finally {
       setSaving(false);
     }
@@ -132,7 +122,7 @@ export default function AbsenceDetailPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando ausencia...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       </AppWrapper>
@@ -145,9 +135,9 @@ export default function AbsenceDetailPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <AiOutlineCalendar className="text-6xl text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No se encontró la ausencia</p>
+            <p className="text-muted-foreground mb-4">{t("notFound")}</p>
             <Link href="/absences" className="text-accent hover:underline">
-              Volver a ausencias
+              {t("backToList")}
             </Link>
           </div>
         </div>
@@ -162,13 +152,13 @@ export default function AbsenceDetailPage() {
         <div className="mb-6">
           <Link href="/absences" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a ausencias</span>
+            <span>{t("backToList")}</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineCalendar />
-            Detalle de Ausencia
+            {t("detailTitle")}
           </h1>
-          <p className="text-muted-foreground">Revisa y gestiona la solicitud de ausencia</p>
+          <p className="text-muted-foreground">{t("detailSubtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,20 +166,20 @@ export default function AbsenceDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Worker Info */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Información del Trabajador</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("workerInfo")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre completo</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">{t("fullName")}</label>
                   <p className="text-foreground font-medium">
                     {absence.worker_first_name} {absence.worker_last_name}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Email</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">{tc("email")}</label>
                   <p className="text-foreground font-medium">{absence.worker_email}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Empresa</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">{tc("company")}</label>
                   <p className="text-foreground font-medium">{absence.company_name}</p>
                 </div>
               </div>
@@ -197,49 +187,49 @@ export default function AbsenceDetailPage() {
 
             {/* Request Details */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Detalles de la Solicitud</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("requestDetails")}</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Estado actual</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("currentStatus")}</label>
                     <span
                       className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusColors[absence.status]}`}
                     >
-                      {statusLabels[absence.status]}
+                      {tc(`statuses.${absence.status}`)}
                     </span>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Tipo de ausencia</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("absenceType")}</label>
                     <p className="text-foreground font-medium">{absence.absence_type_name}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Fechas</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("dates")}</label>
                     <p className="text-foreground font-medium">
                       {absence.start_date} — {absence.end_date}
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Días computados</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("daysComputed")}</label>
                     <p className="text-foreground font-medium">
-                      {absence.days_computed} {absence.deducts_balance ? "(descuenta saldo)" : "(no descuenta saldo)"}
+                      {absence.days_computed} {absence.deducts_balance ? t("deductsBalance") : t("noDeductsBalance")}
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Jornada</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("dayPortion")}</label>
                     <p className="text-foreground font-medium">
-                      {dayPortionLabels[absence.day_portion]}
+                      {t(`portions.${absence.day_portion}`)}
                       {absence.start_time && absence.end_time ? ` (${absence.start_time} - ${absence.end_time})` : ""}
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Solicitud creada</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("requestCreated")}</label>
                     <p className="text-foreground font-medium">{formatToLocalTime(absence.created_at)}</p>
                   </div>
                 </div>
 
                 {absence.worker_comment && (
                   <div className="border-t border-border pt-4">
-                    <label className="block text-sm font-medium text-muted-foreground mb-1">Comentario del trabajador</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">{t("workerComment")}</label>
                     <div className="bg-muted/30 rounded-lg p-4 text-foreground whitespace-pre-wrap">
                       {absence.worker_comment}
                     </div>
@@ -248,14 +238,14 @@ export default function AbsenceDetailPage() {
 
                 {absence.attachment_id && (
                   <div className="border-t border-border pt-4">
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Justificante</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">{t("attachment")}</label>
                     <button
                       onClick={handleDownloadAttachment}
                       disabled={downloading}
                       className="inline-flex items-center gap-2 text-accent hover:underline font-medium disabled:opacity-50"
                     >
                       <AiOutlinePaperClip />
-                      {downloading ? "Descargando..." : "Descargar justificante"}
+                      {downloading ? t("downloading") : t("downloadAttachment")}
                     </button>
                   </div>
                 )}
@@ -264,7 +254,7 @@ export default function AbsenceDetailPage() {
                   <div className="border-t border-border pt-4">
                     <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="text-red-500">⚠️</span>
-                      Errores de Validación
+                      {t("validationErrors")}
                     </h3>
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <ul className="list-disc list-inside space-y-2">
@@ -275,7 +265,7 @@ export default function AbsenceDetailPage() {
                         ))}
                       </ul>
                       <p className="text-red-700 text-sm mt-3 font-medium">
-                        Esta solicitud NO puede ser aceptada debido a los errores de validación. Solo puedes rechazarla.
+                        {t("cannotApprove")}
                       </p>
                     </div>
                   </div>
@@ -285,7 +275,7 @@ export default function AbsenceDetailPage() {
                   <div className="border-t border-border pt-4">
                     <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="text-yellow-500">⚠️</span>
-                      Avisos
+                      {t("warnings")}
                     </h3>
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <ul className="list-disc list-inside space-y-2">
@@ -296,7 +286,7 @@ export default function AbsenceDetailPage() {
                         ))}
                       </ul>
                       <p className="text-yellow-700 text-sm mt-3">
-                        Estos avisos no bloquean la aprobación, pero conviene revisarlos.
+                        {t("warningsNote")}
                       </p>
                     </div>
                   </div>
@@ -305,7 +295,7 @@ export default function AbsenceDetailPage() {
                 {isPending && blockingErrors.length === 0 && warnings.length === 0 && (
                   <div className="border-t border-border pt-4">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-green-800 text-sm font-medium">✓ La solicitud es válida y puede ser aprobada</p>
+                      <p className="text-green-800 text-sm font-medium">{t("canApprove")}</p>
                     </div>
                   </div>
                 )}
@@ -313,14 +303,14 @@ export default function AbsenceDetailPage() {
                 {absence.reviewed_at && (
                   <>
                     <div className="border-t border-border pt-4">
-                      <h3 className="text-lg font-semibold text-foreground mb-4">Revisión de Administrador</h3>
+                      <h3 className="text-lg font-semibold text-foreground mb-4">{t("adminReview")}</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-1">Revisado por</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-1">{t("reviewedBy")}</label>
                           <p className="text-foreground font-medium">{absence.reviewed_by_admin_email}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de revisión</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-1">{t("reviewedAt")}</label>
                           <p className="text-foreground font-medium">{formatToLocalTime(absence.reviewed_at)}</p>
                         </div>
                       </div>
@@ -329,7 +319,7 @@ export default function AbsenceDetailPage() {
                     {absence.admin_public_comment && (
                       <div className="border-t border-border pt-4">
                         <label className="block text-sm font-medium text-muted-foreground mb-1">
-                          Comentario del administrador (visible para el trabajador)
+                          {t("publicCommentLabel")}
                         </label>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-foreground whitespace-pre-wrap">
                           {absence.admin_public_comment}
@@ -346,14 +336,14 @@ export default function AbsenceDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-6 sticky top-6">
               <h2 className="text-xl font-semibold text-foreground mb-4">
-                {isPending ? "Procesar Solicitud" : "Detalles de Revisión"}
+                {isPending ? t("processTitle") : t("reviewDetailsTitle")}
               </h2>
 
               {isPending ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                      Estado <span className="text-destructive">*</span>
+                      {tc("status")} <span className="text-destructive">*</span>
                     </label>
                     <select
                       id="status"
@@ -363,14 +353,14 @@ export default function AbsenceDetailPage() {
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       required
                     >
-                      {canApprove && <option value="accepted">Aceptar Ausencia</option>}
-                      <option value="rejected">Rechazar Solicitud</option>
+                      {canApprove && <option value="accepted">{t("acceptAbsence")}</option>}
+                      <option value="rejected">{t("rejectRequest")}</option>
                     </select>
                   </div>
 
                   <div>
                     <label htmlFor="admin_internal_notes" className="block text-sm font-medium text-foreground mb-2">
-                      Notas internas
+                      {t("internalNotes")}
                     </label>
                     <textarea
                       id="admin_internal_notes"
@@ -379,14 +369,14 @@ export default function AbsenceDetailPage() {
                       onChange={handleChange}
                       rows={4}
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                      placeholder="Notas privadas solo para administradores..."
+                      placeholder={t("internalNotesPlaceholder")}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Solo visible para administradores</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("internalNotesHelp")}</p>
                   </div>
 
                   <div>
                     <label htmlFor="admin_public_comment" className="block text-sm font-medium text-foreground mb-2">
-                      Comentario para el trabajador
+                      {t("commentForWorker")}
                     </label>
                     <textarea
                       id="admin_public_comment"
@@ -395,9 +385,9 @@ export default function AbsenceDetailPage() {
                       onChange={handleChange}
                       rows={4}
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                      placeholder="Comentario opcional. Se enviará al trabajador por email..."
+                      placeholder={t("commentPlaceholder")}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Se enviará al trabajador por email</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("commentHelp")}</p>
                   </div>
 
                   <div className="pt-2 space-y-2">
@@ -406,36 +396,36 @@ export default function AbsenceDetailPage() {
                       disabled={saving || !formData.status}
                       className="w-full bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {saving ? "Guardando..." : "Guardar y Procesar"}
+                      {saving ? tc("saving") : t("saveAndProcess")}
                     </button>
                   </div>
                 </form>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Estado Final</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">{t("finalStatus")}</label>
                     <span
                       className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusColors[absence.status]}`}
                     >
-                      {statusLabels[absence.status]}
+                      {tc(`statuses.${absence.status}`)}
                     </span>
                   </div>
 
                   {absence.reviewed_at && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">Fecha de Revisión</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">{t("reviewDate")}</label>
                         <p className="text-foreground text-sm">{formatToLocalTime(absence.reviewed_at)}</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">Revisado por</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">{t("reviewedBy")}</label>
                         <p className="text-foreground text-sm">{absence.reviewed_by_admin_email}</p>
                       </div>
 
                       {absence.admin_internal_notes && (
                         <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-2">Notas internas</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">{t("internalNotes")}</label>
                           <div className="bg-muted/30 rounded-lg p-3 text-foreground text-sm whitespace-pre-wrap">
                             {absence.admin_internal_notes}
                           </div>
@@ -444,7 +434,7 @@ export default function AbsenceDetailPage() {
 
                       {absence.admin_public_comment && (
                         <div>
-                          <label className="block text-sm font-medium text-muted-foreground mb-2">Comentario público</label>
+                          <label className="block text-sm font-medium text-muted-foreground mb-2">{t("publicComment")}</label>
                           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-foreground text-sm whitespace-pre-wrap">
                             {absence.admin_public_comment}
                           </div>
@@ -460,7 +450,7 @@ export default function AbsenceDetailPage() {
                   href="/absences"
                   className="block w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity text-center"
                 >
-                  Volver al listado
+                  {t("backToListBtn")}
                 </Link>
               </div>
             </div>

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import EnabledCompanySelect from "@/components/absences/EnabledCompanySelect";
 import { apiClient, AbsenceCalendarEntry } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineCalendar, AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { getMonthName } from "@/utils/dateFormatters";
-
-const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const TYPE_COLORS = [
   "bg-blue-100 text-blue-800 border-blue-200",
@@ -47,6 +47,7 @@ function toDateKey(d: Date): string {
 }
 
 export default function AbsenceCalendarPage() {
+  const t = useTranslations("calendar");
   const now = new Date();
   const [companyId, setCompanyId] = useState("");
   const [year, setYear] = useState(now.getFullYear());
@@ -73,7 +74,7 @@ export default function AbsenceCalendarPage() {
       setEntries(data);
     } catch (error) {
       console.error("Error loading absence calendar:", error);
-      toast.error("Error al cargar el calendario de ausencias");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
@@ -111,13 +112,13 @@ export default function AbsenceCalendarPage() {
         <div className="mb-6">
           <Link href="/absences" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a ausencias</span>
+            <span>{t("backToAbsences")}</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineCalendar />
-            Calendario de Equipo
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground">Quién está o estará ausente, con tipo y trabajador</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* Filters */}
@@ -132,7 +133,7 @@ export default function AbsenceCalendarPage() {
                 <button
                   onClick={handlePrevMonth}
                   className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
-                  aria-label="Mes anterior"
+                  aria-label={t("prevMonth")}
                 >
                   <AiOutlineLeft />
                 </button>
@@ -142,7 +143,7 @@ export default function AbsenceCalendarPage() {
                 <button
                   onClick={handleNextMonth}
                   className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
-                  aria-label="Mes siguiente"
+                  aria-label={t("nextMonth")}
                 >
                   <AiOutlineRight />
                 </button>
@@ -156,11 +157,11 @@ export default function AbsenceCalendarPage() {
             {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Cargando calendario...</p>
+                <p className="text-muted-foreground">{t("loading")}</p>
               </div>
             ) : (
               <div className="grid grid-cols-7">
-                {WEEKDAY_LABELS.map((label) => (
+                {t.raw("weekdays").map((label: string) => (
                   <div
                     key={label}
                     className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border bg-muted"
@@ -202,7 +203,7 @@ export default function AbsenceCalendarPage() {
         )}
 
         {companyId && !loading && entries.length === 0 && (
-          <p className="text-sm text-muted-foreground mt-4">No hay ausencias aprobadas este mes.</p>
+          <p className="text-sm text-muted-foreground mt-4">{t("emptyMonth")}</p>
         )}
       </div>
     </AppWrapper>

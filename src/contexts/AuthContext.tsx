@@ -1,8 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { apiClient, APIUser } from "@/lib/api-client";
+import { useTranslations } from "next-intl";
+import { apiClient, APIUser, SupportedLocale } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
+import { isSupportedLocale, negotiateLocale, writeLocaleCookie } from "@/i18n/config";
 
 interface AuthContextType {
   user: APIUser | null;
@@ -10,6 +12,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  /** Persist the admin UI language preference (null clears it). */
+  updateLanguage: (language: SupportedLocale | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<APIUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const t = useTranslations("auth");
 
   // Check if user is already logged in
   useEffect(() => {
@@ -33,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             router.push("/login");
           } else {
             setUser(currentUser);
+            // Mirror the persisted preference for immediate SSR on next loads.
+            if (isSupportedLocale(currentUser.language)) writeLocaleCookie(currentUser.language);
           }
         } catch (error) {
           console.error("Failed to get current user:", error);
@@ -53,15 +60,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if user is admin
       if (currentUser.role !== "admin") {
         apiClient.clearToken();
-        throw new Error("Solo los administradores pueden acceder al panel de administración");
+        throw new Error(t("adminOnly"));
       }
 
       setUser(currentUser);
+      // Apply the user's saved language right away (cookie mirror).
+      const effective = isSupportedLocale(currentUser.language)
+        ? currentUser.language
+        : negotiateLocale(typeof navigator !== "undefined" ? navigator.language : null);
+      writeLocaleCookie(effective);
       router.push("/");
     } catch (error) {
       console.error("Login error:", error);
       throw error;
     }
+  };
+
+  const updateLanguage = async (language: SupportedLocale | null) => {
+    const updated = await apiClient.updateMyLanguage(language);
+    setUser(updated);
   };
 
   const logout = () => {
@@ -77,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         login,
         logout,
+        updateLanguage,
         isAuthenticated: !!user,
       }}
     >

@@ -2,14 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, type Worker, type Company, type SmsMessage, type SmsCredits } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineMessage } from "react-icons/ai";
 import SmsHistoryTable from "@/components/sms/SmsHistoryTable";
 
 export default function EditWorkerPage() {
+  const t = useTranslations("workers");
+  const tc = useTranslations("common");
   const router = useRouter();
   const params = useParams();
   const workerId = params.id as string;
@@ -49,7 +53,7 @@ export default function EditWorkerPage() {
       setCompanies(data);
     } catch (error) {
       console.error("Error loading companies:", error);
-      toast.error("Error al cargar las empresas");
+      toast.error(getApiErrorMessage(error, t("companiesLoadError")));
     } finally {
       setLoadingCompanies(false);
     }
@@ -70,7 +74,7 @@ export default function EditWorkerPage() {
       setSmsEnabled(worker.sms_config?.sms_enabled ?? true);
     } catch (error) {
       console.error("Error loading worker:", error);
-      toast.error("Error al cargar el trabajador");
+      toast.error(getApiErrorMessage(error, t("loadError")));
       router.push("/workers");
     } finally {
       setLoading(false);
@@ -105,17 +109,16 @@ export default function EditWorkerPage() {
     try {
       const result = await apiClient.sendWorkerSms(workerId, { message: smsText.trim() });
       if (result.success) {
-        toast.success("SMS enviado correctamente");
+        toast.success(t("smsSent"));
         setShowSmsModal(false);
         setSmsText("");
         loadSmsHistory();
       } else {
-        toast.error(result.error_message || "Error al enviar el SMS");
+        toast.error(result.error_message || t("smsSendError"));
       }
     } catch (error) {
       console.error("Error sending SMS:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al enviar el SMS";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("smsSendError")));
     } finally {
       setSendingSms(false);
     }
@@ -151,12 +154,12 @@ export default function EditWorkerPage() {
 
     // Validation
     if (!formData.first_name || !formData.last_name || !formData.email || !formData.id_number) {
-      toast.error("Por favor complete todos los campos obligatorios");
+      toast.error(t("requiredFields"));
       return;
     }
 
     if (selectedCompanies.length === 0) {
-      toast.error("Debe seleccionar al menos una empresa");
+      toast.error(t("needCompany"));
       return;
     }
 
@@ -176,12 +179,11 @@ export default function EditWorkerPage() {
       };
 
       await apiClient.updateWorker(workerId, updateData);
-      toast.success("Trabajador actualizado correctamente");
+      toast.success(t("updated"));
       router.push("/workers");
     } catch (error) {
       console.error("Error updating worker:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al actualizar el trabajador";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -193,7 +195,7 @@ export default function EditWorkerPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando trabajador...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       </AppWrapper>
@@ -207,10 +209,10 @@ export default function EditWorkerPage() {
         <div className="mb-6">
           <Link href="/workers" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a trabajadores</span>
+            <span>{t("backToList")}</span>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground">Editar Trabajador</h1>
-          <p className="text-muted-foreground">Modifica la información del trabajador</p>
+          <h1 className="text-3xl font-bold text-foreground">{t("editTitle")}</h1>
+          <p className="text-muted-foreground">{t("editSubtitle")}</p>
         </div>
 
         {/* Form */}
@@ -219,7 +221,7 @@ export default function EditWorkerPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="first_name" className="block text-sm font-medium text-foreground mb-2">
-                  Nombre <span className="text-destructive">*</span>
+                  {t("firstName")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -234,7 +236,7 @@ export default function EditWorkerPage() {
 
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-foreground mb-2">
-                  Apellidos <span className="text-destructive">*</span>
+                  {t("lastName")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -250,7 +252,7 @@ export default function EditWorkerPage() {
 
             <div>
               <label htmlFor="id_number" className="block text-sm font-medium text-foreground mb-2">
-                DNI/NIE <span className="text-destructive">*</span>
+                {tc("dniNie")} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -265,7 +267,7 @@ export default function EditWorkerPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email <span className="text-destructive">*</span>
+                {tc("email")} <span className="text-destructive">*</span>
               </label>
               <input
                 type="email"
@@ -280,7 +282,7 @@ export default function EditWorkerPage() {
 
             <div>
               <label htmlFor="phone_number" className="block text-sm font-medium text-foreground mb-2">
-                Teléfono
+                {tc("phone")}
               </label>
               <input
                 type="tel"
@@ -294,15 +296,15 @@ export default function EditWorkerPage() {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Empresas <span className="text-destructive">*</span>
+                {t("companies")} <span className="text-destructive">*</span>
               </label>
               {loadingCompanies ? (
-                <div className="text-sm text-muted-foreground">Cargando empresas...</div>
+                <div className="text-sm text-muted-foreground">{t("companiesLoading")}</div>
               ) : companies.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
-                  No hay empresas disponibles.{" "}
+                  {t("companiesEmpty")}{" "}
                   <Link href="/companies/new" className="text-accent hover:underline">
-                    Crear una empresa primero
+                    {t("companiesEmptyCreate")}
                   </Link>
                 </div>
               ) : (
@@ -324,7 +326,7 @@ export default function EditWorkerPage() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Selecciona al menos una empresa. Seleccionadas: {selectedCompanies.length}
+                    {t("companiesHelp", { count: selectedCompanies.length })}
                   </p>
                 </>
               )}
@@ -332,7 +334,7 @@ export default function EditWorkerPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                Nueva Contraseña (opcional)
+                {t("newPasswordOptional")}
               </label>
               <input
                 type="password"
@@ -341,11 +343,11 @@ export default function EditWorkerPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Dejar vacío para mantener la actual"
+                placeholder={t("keepPasswordPlaceholder")}
                 minLength={8}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Solo ingrese una contraseña si desea cambiarla
+                {t("passwordOnlyIfChange")}
               </p>
             </div>
 
@@ -361,12 +363,11 @@ export default function EditWorkerPage() {
                   disabled={saving}
                 />
                 <label htmlFor="sms_enabled" className="text-sm font-medium text-foreground">
-                  Activar recordatorios SMS para este trabajador
+                  {t("smsEnabledLabel")}
                 </label>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Se utilizará el número de teléfono del trabajador para enviar los SMS.
-                Si no tiene teléfono, no se enviarán recordatorios.
+                {t("smsEnabledHelp")}
               </p>
             </div>
 
@@ -376,13 +377,13 @@ export default function EditWorkerPage() {
                 disabled={saving}
                 className="flex-1 bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Guardando..." : "Guardar Cambios"}
+                {saving ? tc("saving") : tc("save")}
               </button>
               <Link
                 href="/workers"
                 className="flex-1 bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity text-center"
               >
-                Cancelar
+                {tc("cancel")}
               </Link>
             </div>
           </form>
@@ -392,7 +393,7 @@ export default function EditWorkerPage() {
         <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mt-6">
           <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
             <AiOutlineMessage className="text-accent" />
-            Recordatorios SMS
+            {t("smsCardTitle")}
           </h2>
 
           <div className="space-y-4">
@@ -404,18 +405,18 @@ export default function EditWorkerPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity text-sm"
               >
                 <AiOutlineMessage />
-                Enviar SMS
+                {t("sendSms")}
               </button>
             )}
 
             {/* Recent SMS mini-table */}
             <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Últimos mensajes SMS</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-3">{t("lastSms")}</h3>
               <div className="border border-border rounded-lg overflow-hidden">
                 {loadingSms ? (
                   <div className="p-6 text-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Cargando...</p>
+                    <p className="text-sm text-muted-foreground">{tc("loading")}</p>
                   </div>
                 ) : (
                   <SmsHistoryTable
@@ -446,20 +447,20 @@ export default function EditWorkerPage() {
             ref={smsModalRef}
           >
             <h3 id="sms-modal-title" className="text-lg font-semibold text-foreground mb-4">
-              Enviar SMS a {formData.first_name} {formData.last_name}
+              {t("smsModalTitle", { name: `${formData.first_name} ${formData.last_name}` })}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1">
-                  Teléfono destino
+                  {t("smsDestPhone")}
                 </label>
                 <p className="text-sm text-foreground">{formData.phone_number}</p>
               </div>
 
               <div>
                 <label htmlFor="sms_text" className="block text-sm font-medium text-foreground mb-1">
-                  Mensaje
+                  {t("smsMessageLabel")}
                 </label>
                 <textarea
                   id="sms_text"
@@ -468,7 +469,7 @@ export default function EditWorkerPage() {
                   maxLength={480}
                   rows={4}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                  placeholder="Escribe el mensaje SMS..."
+                  placeholder={t("smsMessagePlaceholder")}
                   disabled={sendingSms}
                 />
                 <p className="text-xs text-muted-foreground mt-1 text-right">
@@ -484,7 +485,7 @@ export default function EditWorkerPage() {
                 disabled={sendingSms}
                 className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Cancelar
+                {tc("cancel")}
               </button>
               <button
                 type="button"
@@ -492,7 +493,7 @@ export default function EditWorkerPage() {
                 disabled={!smsText.trim() || sendingSms}
                 className="flex-1 px-4 py-2 bg-accent text-accent-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sendingSms ? "Enviando..." : "Enviar SMS"}
+                {sendingSms ? t("smsSending") : t("smsSend")}
               </button>
             </div>
           </div>

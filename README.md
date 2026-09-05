@@ -217,6 +217,18 @@ El sistema de autenticación funciona de la siguiente manera:
 5. El token se incluye automáticamente en todas las peticiones a la API
 6. Si el token expira, se redirige automáticamente a /login
 
+## Internacionalización (i18n)
+
+El panel soporta **español, inglés y catalán** con `next-intl` (sin segmento de idioma
+en la URL; fallback por clave a `es`). Los catálogos están en `messages/{es,en,ca}.json`.
+El idioma de UI se resuelve como `APIUser.language ?? navegador ?? es`, se persiste con
+`PATCH /api/users/me` desde el selector del cabecera y se espeja en la cookie
+`NEXT_LOCALE` para el SSR. Los errores de API se traducen por `error_code`
+(códigos en `openjornada-api/docs/error-codes.md`). El campo `notification_language` de
+cada empresa (en su pantalla de ajuste) controla el idioma de los emails y SMS que la
+API envía a sus trabajadores, independientemente del idioma de la UI del admin.
+Para añadir un idioma nuevo, ver [`docs/I18N.md`](../docs/I18N.md).
+
 ## Personalización
 
 ### Branding

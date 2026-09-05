@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import { apiClient, type TimeRecord, type Company, type RealtimeEvent } from "@/lib/api-client";
 import { useRealtime, useRealtimeConnection } from "@/contexts/RealtimeProvider";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineClockCircle, AiOutlineDownload } from "react-icons/ai";
 import { formatToLocalTime, getCurrentMonthRange } from "@/utils/dateFormatters";
 
@@ -21,6 +23,9 @@ interface FichajeCreatedPayload {
 }
 
 export default function TimeRecordsPage() {
+  const t = useTranslations("timeRecords");
+  const tc = useTranslations("common");
+  const trt = useTranslations("common.recordTypes");
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,7 +55,7 @@ export default function TimeRecordsPage() {
       setCompanies(data);
     } catch (error) {
       console.error("Error loading companies:", error);
-      toast.error("Error al cargar las empresas");
+      toast.error(getApiErrorMessage(error, t("companiesLoadError")));
     } finally {
       setLoadingCompanies(false);
     }
@@ -63,7 +68,7 @@ export default function TimeRecordsPage() {
       setRecords(data);
     } catch (error) {
       console.error("Error loading time records:", error);
-      toast.error("Error al cargar los registros");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
       setFiltering(false);
@@ -160,25 +165,13 @@ export default function TimeRecordsPage() {
     loadRecords(buildCurrentFilters());
   });
 
-  const getRecordTypeLabel = (type: string) => {
-    switch (type) {
-      case "entry":
-        return "Entrada";
-      case "exit":
-        return "Salida";
-      case "pause_start":
-        return "Inicio Pausa";
-      case "pause_end":
-        return "Fin Pausa";
-      default:
-        return type;
-    }
-  };
+  const getRecordTypeLabel = (type: string) =>
+    trt.has(type) ? trt(type as "entry") : type;
 
   // Export to Excel function
   const handleExportToExcel = async () => {
     if (filteredRecords.length === 0) {
-      toast.error("No hay registros para exportar");
+      toast.error(t("nothingToExport"));
       return;
     }
 
@@ -186,35 +179,36 @@ export default function TimeRecordsPage() {
       const XLSX = await import("xlsx");
 
       // Prepare data for Excel
+      const headers = t.raw("excelHeaders") as Record<string, string>;
       const dataToExport = filteredRecords.map((record) => ({
-        DNI: record.worker_id_number,
-        Trabajador: record.worker_name,
-        Empresa: record.company_name || "N/A",
-        Tipo: getRecordTypeLabel(record.record_type),
-        "Tipo de Pausa": record.pause_type_name || "-",
-        "Pausa Cuenta como Trabajo": record.pause_counts_as_work !== undefined
-          ? (record.pause_counts_as_work ? "Sí" : "No")
+        [headers.dni]: record.worker_id_number,
+        [headers.worker]: record.worker_name,
+        [headers.company]: record.company_name || tc("notAvailable"),
+        [headers.type]: getRecordTypeLabel(record.record_type),
+        [headers.pauseType]: record.pause_type_name || "-",
+        [headers.pauseCounts]: record.pause_counts_as_work !== undefined
+          ? (record.pause_counts_as_work ? tc("yes") : tc("no"))
           : "-",
-        "Fecha y Hora": formatToLocalTime(record.timestamp),
-        "Duración": formatDuration(record.duration_minutes),
+        [headers.dateTime]: formatToLocalTime(record.timestamp),
+        [headers.duration]: formatDuration(record.duration_minutes),
       }));
 
       // Create workbook and worksheet
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Registros de Jornada");
+      XLSX.utils.book_append_sheet(workbook, worksheet, t("sheetName"));
 
       // Generate filename with current date
       const today = new Date().toISOString().split("T")[0];
-      const filename = `registros_jornada_${today}.xlsx`;
+      const filename = `${t("fileName")}_${today}.xlsx`;
 
       // Download file
       XLSX.writeFile(workbook, filename);
 
-      toast.success(`Exportados ${filteredRecords.length} registros a Excel`);
+      toast.success(t("exported", { count: filteredRecords.length }));
     } catch (error) {
       console.error("Error exporting to Excel:", error);
-      toast.error("Error al exportar a Excel");
+      toast.error(getApiErrorMessage(error, t("exportError")));
     }
   };
 
@@ -225,9 +219,9 @@ export default function TimeRecordsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineClockCircle />
-            Registros de Jornada
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground">Visualiza todos los registros de entrada y salida</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* Filters */}
@@ -236,12 +230,12 @@ export default function TimeRecordsPage() {
             {/* Search by worker name */}
             <div>
               <label htmlFor="search" className="block text-sm font-medium text-foreground mb-2">
-                Buscar por trabajador
+                {tc("searchWorker")}
               </label>
               <input
                 type="text"
                 id="search"
-                placeholder="Buscar por nombre o apellidos..."
+                placeholder={tc("searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
@@ -252,7 +246,7 @@ export default function TimeRecordsPage() {
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de inicio
+                  {tc("startDate")}
                 </label>
                 <input
                   type="date"
@@ -265,7 +259,7 @@ export default function TimeRecordsPage() {
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de fin
+                  {tc("endDate")}
                 </label>
                 <input
                   type="date"
@@ -278,11 +272,11 @@ export default function TimeRecordsPage() {
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
-                  Empresa
+                  {tc("company")}
                 </label>
                 {loadingCompanies ? (
                   <div className="w-full px-4 py-2 border border-input bg-background rounded-lg text-sm text-muted-foreground">
-                    Cargando...
+                    {tc("loading")}
                   </div>
                 ) : (
                   <select
@@ -291,7 +285,7 @@ export default function TimeRecordsPage() {
                     onChange={(e) => setSelectedCompanyId(e.target.value)}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   >
-                    <option value="">Todas las empresas</option>
+                    <option value="">{t("allCompanies")}</option>
                     {companies.map((company) => (
                       <option key={company.id} value={company.id}>
                         {company.name}
@@ -306,14 +300,14 @@ export default function TimeRecordsPage() {
                 disabled={filtering}
                 className="bg-accent text-accent-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {filtering ? "Filtrando..." : "Filtrar"}
+                {filtering ? tc("filtering") : tc("filter")}
               </button>
 
               <button
                 onClick={handleClearFilters}
                 className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Limpiar
+                {tc("clearFilters")}
               </button>
             </div>
 
@@ -325,7 +319,7 @@ export default function TimeRecordsPage() {
                 className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <AiOutlineDownload className="text-lg" />
-                Exportar a Excel ({filteredRecords.length} registros)
+                {t("exportWithCount", { count: filteredRecords.length })}
               </button>
             </div>
           </div>
@@ -336,13 +330,13 @@ export default function TimeRecordsPage() {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando registros...</p>
+              <p className="text-muted-foreground">{t("loading")}</p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="p-8 text-center">
               <AiOutlineClockCircle className="text-6xl text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {(searchTerm || selectedCompanyId) ? "No se encontraron registros que coincidan con los filtros aplicados" : "No hay registros para mostrar"}
+                {(searchTerm || selectedCompanyId) ? t("emptyFiltered") : t("empty")}
               </p>
             </div>
           ) : (
@@ -351,22 +345,22 @@ export default function TimeRecordsPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Trabajador
+                      {tc("worker")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Empresa
+                      {tc("company")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tipo
+                      {t("type")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Detalle
+                      {t("detail")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Fecha y Hora
+                      {t("dateTime")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Duración
+                      {t("duration")}
                     </th>
                   </tr>
                 </thead>
@@ -377,7 +371,7 @@ export default function TimeRecordsPage() {
                         {record.worker_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {record.company_name || "N/A"}
+                        {record.company_name || tc("notAvailable")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span
@@ -400,9 +394,9 @@ export default function TimeRecordsPage() {
                             <div className="font-medium text-foreground">{record.pause_type_name}</div>
                             <div className="text-xs">
                               {record.pause_counts_as_work ? (
-                                <span className="text-green-600 dark:text-green-400">⏱️ Cuenta como trabajo</span>
+                                <span className="text-green-600 dark:text-green-400">{t("pauseCountsAsWork")}</span>
                               ) : (
-                                <span className="text-orange-600 dark:text-orange-400">⏸️ Fuera de jornada</span>
+                                <span className="text-orange-600 dark:text-orange-400">{t("pauseOutsideShift")}</span>
                               )}
                             </div>
                           </div>
@@ -427,7 +421,7 @@ export default function TimeRecordsPage() {
         {/* Summary */}
         {filteredRecords.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Mostrando {filteredRecords.length} registro{filteredRecords.length !== 1 ? "s" : ""}
+            {tc("showingRecords", { count: filteredRecords.length })}
           </div>
         )}
       </div>

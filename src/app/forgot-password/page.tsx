@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
@@ -10,6 +11,8 @@ import { appConfig } from "@/lib/config";
 type FormState = "idle" | "loading" | "success" | "error";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("auth.forgot");
+  const ta = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [state, setState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -24,12 +27,12 @@ export default function ForgotPasswordPage() {
     setErrorMessage("");
 
     if (!email) {
-      setErrorMessage("Por favor ingrese su email");
+      setErrorMessage(t("emailRequired"));
       return;
     }
 
     if (!validateEmail(email)) {
-      setErrorMessage("Por favor ingrese un email válido");
+      setErrorMessage(t("emailInvalid"));
       return;
     }
 
@@ -39,14 +42,14 @@ export default function ForgotPasswordPage() {
       await apiClient.forgotPassword(email);
       setState("success");
       setEmail("");
-      toast.success("Si el email existe, recibirás instrucciones para restablecer tu contraseña");
+      toast.success(t("genericMessage"));
     } catch (error: unknown) {
       console.error("Forgot password error:", error);
       setState("error");
       // Mensaje genérico por seguridad (no revelar si el usuario existe)
-      setErrorMessage("Si el email existe, recibirás instrucciones para restablecer tu contraseña");
+      setErrorMessage(t("genericMessage"));
       // Aún así mostramos un toast de éxito por seguridad
-      toast.success("Si el email existe, recibirás instrucciones para restablecer tu contraseña");
+      toast.success(t("genericMessage"));
     }
   };
 
@@ -67,12 +70,8 @@ export default function ForgotPasswordPage() {
                 />
               </div>
             )}
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Recuperar Contraseña
-            </h1>
-            <p className="text-muted-foreground">
-              Ingresa tu email y te enviaremos instrucciones
-            </p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{t("title")}</h1>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
 
           {state === "success" ? (
@@ -92,12 +91,9 @@ export default function ForgotPasswordPage() {
                   </svg>
                   <div>
                     <h3 className="text-sm font-medium text-green-800">
-                      Instrucciones enviadas
+                      {t("instructionsSentTitle")}
                     </h3>
-                    <p className="text-sm text-green-700 mt-1">
-                      Si el email existe en nuestro sistema, recibirás un correo con
-                      instrucciones para restablecer tu contraseña.
-                    </p>
+                    <p className="text-sm text-green-700 mt-1">{t("instructionsSentBody")}</p>
                   </div>
                 </div>
               </div>
@@ -106,7 +102,7 @@ export default function ForgotPasswordPage() {
                 href="/login"
                 className="block w-full text-center bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Volver al inicio de sesión
+                {t("backToLogin")}
               </Link>
             </div>
           ) : (
@@ -116,7 +112,7 @@ export default function ForgotPasswordPage() {
                   htmlFor="email"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Email
+                  {ta("emailLabel")}
                 </label>
                 <input
                   id="email"
@@ -124,7 +120,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="Ingrese su email"
+                  placeholder={ta("emailPlaceholder")}
                   disabled={state === "loading"}
                   autoComplete="email"
                   autoFocus
@@ -161,10 +157,10 @@ export default function ForgotPasswordPage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Enviando...
+                    {t("submitting")}
                   </span>
                 ) : (
-                  "Enviar instrucciones"
+                  t("submit")
                 )}
               </button>
 
@@ -173,7 +169,7 @@ export default function ForgotPasswordPage() {
                   href="/login"
                   className="text-sm text-accent hover:underline"
                 >
-                  Volver al inicio de sesión
+                  {t("backToLogin")}
                 </Link>
               </div>
             </form>
@@ -182,7 +178,7 @@ export default function ForgotPasswordPage() {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground">
-              Panel de administración de {appConfig.appName}
+              {t("panelFooter", { appName: appConfig.appName })}
             </p>
           </div>
         </div>

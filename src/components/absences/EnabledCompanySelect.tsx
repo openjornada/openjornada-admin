@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { apiClient, type Company } from "@/lib/api-client";
 
@@ -18,7 +19,10 @@ interface EnabledCompanySelectProps {
  * needs a `company_id` (list, calendar, policy settings) picks it locally,
  * following the same pattern already used in `ReportFilters`.
  */
-export default function EnabledCompanySelect({ value, onChange, disabled, label = "Empresa" }: EnabledCompanySelectProps) {
+export default function EnabledCompanySelect({ value, onChange, disabled, label }: EnabledCompanySelectProps) {
+  const t = useTranslations("absences");
+  const tc = useTranslations("common");
+  const labelOr = label ?? tc("company");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,9 +44,9 @@ export default function EnabledCompanySelect({ value, onChange, disabled, label 
   if (!loading && companies.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">
-        Ninguna empresa tiene activada la gestión de ausencias.{" "}
+        {t("noEnabledCompany")}{" "}
         <Link href="/companies" className="text-accent hover:underline">
-          Habilítala en la ficha de empresa
+          {t("enableInCompany")}
         </Link>
         .
       </div>
@@ -51,14 +55,14 @@ export default function EnabledCompanySelect({ value, onChange, disabled, label 
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
+      <label className="block text-sm font-medium text-foreground mb-1">{labelOr}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled || loading}
         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       >
-        {loading && <option value="">Cargando...</option>}
+        {loading && <option value="">{tc("loading")}</option>}
         {companies.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}

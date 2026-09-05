@@ -1,18 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import { apiClient, ChangeRequest } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineClockCircle, AiOutlineEye } from "react-icons/ai";
 import { formatToLocalTime, getCurrentMonthRange } from "@/utils/dateFormatters";
 import { useRouter } from "next/navigation";
-
-const statusLabels = {
-  pending: "Pendiente",
-  accepted: "Aceptada",
-  rejected: "Rechazada"
-};
 
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -20,12 +16,10 @@ const statusColors = {
   rejected: "bg-red-100 text-red-800 border-red-200"
 };
 
-const recordTypeLabels = {
-  entry: "Entrada",
-  exit: "Salida"
-};
-
 export default function ChangeRequestsPage() {
+  const t = useTranslations("changeRequests");
+  const tc = useTranslations("common");
+  const trt = useTranslations("common.recordTypes");
   const router = useRouter();
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +51,7 @@ export default function ChangeRequestsPage() {
       setChangeRequests(data);
     } catch (error) {
       console.error("Error loading change requests:", error);
-      toast.error("Error al cargar peticiones de cambio");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
       setFiltering(false);
@@ -95,9 +89,9 @@ export default function ChangeRequestsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineClockCircle />
-            Peticiones de Cambio
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground">Gestiona las peticiones de cambio de registros de los trabajadores</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* Filters */}
@@ -106,12 +100,12 @@ export default function ChangeRequestsPage() {
             {/* Search by worker name */}
             <div>
               <label htmlFor="search" className="block text-sm font-medium text-foreground mb-2">
-                Buscar por trabajador
+                {tc("searchWorker")}
               </label>
               <input
                 type="text"
                 id="search"
-                placeholder="Buscar por nombre o apellidos..."
+                placeholder={tc("searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
@@ -122,7 +116,7 @@ export default function ChangeRequestsPage() {
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                  Estado
+                  {tc("status")}
                 </label>
                 <select
                   id="status"
@@ -130,16 +124,16 @@ export default function ChangeRequestsPage() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
-                  <option value="">Todas</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="accepted">Aceptada</option>
-                  <option value="rejected">Rechazada</option>
+                  <option value="">{tc("all")}</option>
+                  <option value="pending">{tc("statuses.pending")}</option>
+                  <option value="accepted">{tc("statuses.accepted")}</option>
+                  <option value="rejected">{tc("statuses.rejected")}</option>
                 </select>
               </div>
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de inicio
+                  {tc("startDate")}
                 </label>
                 <input
                   type="date"
@@ -152,7 +146,7 @@ export default function ChangeRequestsPage() {
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de fin
+                  {tc("endDate")}
                 </label>
                 <input
                   type="date"
@@ -168,14 +162,14 @@ export default function ChangeRequestsPage() {
                 disabled={filtering}
                 className="bg-accent text-accent-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {filtering ? "Filtrando..." : "Filtrar"}
+                {filtering ? tc("filtering") : tc("filter")}
               </button>
 
               <button
                 onClick={handleClearFilters}
                 className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Limpiar
+                {tc("clearFilters")}
               </button>
             </div>
           </div>
@@ -186,13 +180,13 @@ export default function ChangeRequestsPage() {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando peticiones de cambio...</p>
+              <p className="text-muted-foreground">{t("loading")}</p>
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="p-8 text-center">
               <AiOutlineClockCircle className="text-6xl text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm ? "No se encontraron peticiones que coincidan con tu búsqueda" : "No hay peticiones para mostrar"}
+                {searchTerm ? t("emptyFiltered") : t("empty")}
               </p>
             </div>
           ) : (
@@ -201,25 +195,25 @@ export default function ChangeRequestsPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Trabajador
+                      {tc("worker")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Empresa
+                      {tc("company")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tipo de Registro
+                      {t("recordTypeCol")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Fecha Original
+                      {t("originalDateCol")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Estado
+                      {tc("status")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Fecha Solicitud
+                      {t("requestedAtCol")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
+                      {tc("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -244,7 +238,7 @@ export default function ChangeRequestsPage() {
                         {request.company_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {recordTypeLabels[request.original_type]}
+                        {trt(request.original_type)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {formatToLocalTime(request.original_timestamp)}
@@ -255,7 +249,7 @@ export default function ChangeRequestsPage() {
                             statusColors[request.status]
                           }`}
                         >
-                          {statusLabels[request.status]}
+                          {tc(`statuses.${request.status}`)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
@@ -270,7 +264,7 @@ export default function ChangeRequestsPage() {
                           className="text-accent hover:text-accent/80 font-medium inline-flex items-center gap-1"
                         >
                           <AiOutlineEye className="text-lg" />
-                          Ver detalle
+                          {tc("viewDetail")}
                         </button>
                       </td>
                     </tr>
@@ -284,9 +278,9 @@ export default function ChangeRequestsPage() {
         {/* Summary */}
         {filteredRequests.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Mostrando {filteredRequests.length} petición{filteredRequests.length !== 1 ? "es" : ""}
-            {searchTerm && ` (filtrado por "${searchTerm}")`}
-            {changeRequests.length !== filteredRequests.length && ` de ${changeRequests.length} total${changeRequests.length !== 1 ? "es" : ""}`}
+            {searchTerm
+              ? t("showingFiltered", { shown: filteredRequests.length, total: changeRequests.length, term: searchTerm })
+              : t("showing", { count: filteredRequests.length })}
           </div>
         )}
       </div>

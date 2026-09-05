@@ -217,6 +217,18 @@ The authentication system works as follows:
 5. The token is automatically included in all API requests
 6. If the token expires, the user is automatically redirected to /login
 
+## Internationalization (i18n)
+
+The panel supports **Spanish, English and Catalan** via `next-intl` (no locale segment
+in the URL; per-key fallback to `es`). Catalogs live in `messages/{es,en,ca}.json`.
+The UI language resolves as `APIUser.language ?? browser ?? es`, is persisted through
+`PATCH /api/users/me` from the header language selector, and is mirrored in the
+`NEXT_LOCALE` cookie for SSR. API errors are translated by `error_code` (registry in
+`openjornada-api/docs/error-codes.md`). Each company's `notification_language` field
+(in its settings screen) controls the language of emails and SMS the API sends to its
+workers, independently of the admin's UI language. To add a new language, see
+[`docs/I18N.md`](../docs/I18N.md).
+
 ## Customization
 
 ### Branding

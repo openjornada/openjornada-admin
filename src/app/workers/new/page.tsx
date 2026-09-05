@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, type Company } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 
 export default function NewWorkerPage() {
+  const t = useTranslations("workers");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -30,6 +34,7 @@ export default function NewWorkerPage() {
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCompanies = async () => {
@@ -38,7 +43,7 @@ export default function NewWorkerPage() {
       setCompanies(data);
     } catch (error) {
       console.error("Error loading companies:", error);
-      toast.error("Error al cargar las empresas");
+      toast.error(getApiErrorMessage(error, t("companiesLoadError")));
     } finally {
       setLoadingCompanies(false);
     }
@@ -64,12 +69,12 @@ export default function NewWorkerPage() {
 
     // Validation
     if (!formData.first_name || !formData.last_name || !formData.email || !formData.id_number || !formData.password) {
-      toast.error("Por favor complete todos los campos obligatorios");
+      toast.error(t("requiredFields"));
       return;
     }
 
     if (selectedCompanies.length === 0) {
-      toast.error("Debe seleccionar al menos una empresa");
+      toast.error(t("needCompany"));
       return;
     }
 
@@ -81,12 +86,11 @@ export default function NewWorkerPage() {
         company_ids: selectedCompanies,
         send_welcome_email: sendWelcomeEmail,
       });
-      toast.success("Trabajador creado correctamente");
+      toast.success(t("created"));
       router.push("/workers");
     } catch (error) {
       console.error("Error creating worker:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al crear el trabajador";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -99,10 +103,10 @@ export default function NewWorkerPage() {
         <div className="mb-6">
           <Link href="/workers" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a trabajadores</span>
+            <span>{t("backToList")}</span>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground">Nuevo Trabajador</h1>
-          <p className="text-muted-foreground">Registra un nuevo trabajador en el sistema</p>
+          <h1 className="text-3xl font-bold text-foreground">{t("createTitle")}</h1>
+          <p className="text-muted-foreground">{t("createSubtitle")}</p>
         </div>
 
         {/* Form */}
@@ -111,7 +115,7 @@ export default function NewWorkerPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="first_name" className="block text-sm font-medium text-foreground mb-2">
-                  Nombre <span className="text-destructive">*</span>
+                  {t("firstName")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -126,7 +130,7 @@ export default function NewWorkerPage() {
 
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-foreground mb-2">
-                  Apellidos <span className="text-destructive">*</span>
+                  {t("lastName")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -142,7 +146,7 @@ export default function NewWorkerPage() {
 
             <div>
               <label htmlFor="id_number" className="block text-sm font-medium text-foreground mb-2">
-                DNI/NIE <span className="text-destructive">*</span>
+                {tc("dniNie")} <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -151,14 +155,14 @@ export default function NewWorkerPage() {
                 value={formData.id_number}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="12345678A"
+                placeholder={t("idNumberPlaceholder")}
                 required
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email <span className="text-destructive">*</span>
+                {tc("email")} <span className="text-destructive">*</span>
               </label>
               <input
                 type="email"
@@ -167,14 +171,14 @@ export default function NewWorkerPage() {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="trabajador@ejemplo.com"
+                placeholder={t("emailPlaceholder")}
                 required
               />
             </div>
 
             <div>
               <label htmlFor="phone_number" className="block text-sm font-medium text-foreground mb-2">
-                Teléfono
+                {tc("phone")}
               </label>
               <input
                 type="tel"
@@ -189,7 +193,7 @@ export default function NewWorkerPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                Contraseña <span className="text-destructive">*</span>
+                {t("password")} <span className="text-destructive">*</span>
               </label>
               <input
                 type="password"
@@ -198,26 +202,26 @@ export default function NewWorkerPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t("passwordPlaceholder")}
                 required
                 minLength={8}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                El trabajador usará esta contraseña para registrar su jornada
+                {t("passwordHelp")}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Empresas <span className="text-destructive">*</span>
+                {t("companies")} <span className="text-destructive">*</span>
               </label>
               {loadingCompanies ? (
-                <div className="text-sm text-muted-foreground">Cargando empresas...</div>
+                <div className="text-sm text-muted-foreground">{t("companiesLoading")}</div>
               ) : companies.length === 0 ? (
                 <div className="text-sm text-muted-foreground">
-                  No hay empresas disponibles.{" "}
+                  {t("companiesEmpty")}{" "}
                   <Link href="/companies/new" className="text-accent hover:underline">
-                    Crear una empresa primero
+                    {t("companiesEmptyCreate")}
                   </Link>
                 </div>
               ) : (
@@ -239,7 +243,7 @@ export default function NewWorkerPage() {
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Selecciona al menos una empresa. Seleccionadas: {selectedCompanies.length}
+                    {t("companiesHelp", { count: selectedCompanies.length })}
                   </p>
                 </>
               )}
@@ -247,7 +251,7 @@ export default function NewWorkerPage() {
 
             <div>
               <label htmlFor="default_timezone" className="block text-sm font-medium text-foreground mb-2">
-                Zona Horaria
+                {t("timezone")}
               </label>
               <select
                 id="default_timezone"
@@ -256,8 +260,8 @@ export default function NewWorkerPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
               >
-                <option value="Europe/Madrid">Europa/Madrid</option>
-                <option value="Atlantic/Canary">Canarias</option>
+                <option value="Europe/Madrid">{t("tzMadrid")}</option>
+                <option value="Atlantic/Canary">{t("tzCanary")}</option>
                 <option value="UTC">UTC</option>
               </select>
             </div>
@@ -271,7 +275,7 @@ export default function NewWorkerPage() {
                 className="w-4 h-4 text-accent border-input rounded focus:ring-2 focus:ring-accent"
               />
               <label htmlFor="send_welcome_email" className="ml-2 text-sm text-foreground">
-                Enviar correo de bienvenida al trabajador
+                {t("sendWelcome")}
               </label>
             </div>
 
@@ -281,13 +285,13 @@ export default function NewWorkerPage() {
                 disabled={loading}
                 className="flex-1 bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Creando..." : "Crear Trabajador"}
+                {loading ? t("creating") : t("createSubmit")}
               </button>
               <Link
                 href="/workers"
                 className="flex-1 bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity text-center"
               >
-                Cancelar
+                {tc("cancel")}
               </Link>
             </div>
           </form>

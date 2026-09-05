@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import SubscriptionSettings from "@/components/SubscriptionSettings";
 import { apiClient } from "@/lib/api-client";
 import type { Settings, BackupConfigInput, BackupSchedule } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineSetting, AiOutlineCloudServer, AiOutlineDatabase, AiOutlineUpload } from "react-icons/ai";
 import Link from "next/link";
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +74,7 @@ export default function SettingsPage() {
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
     fetchSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
@@ -102,7 +107,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
-      toast.error("Error al cargar la configuración");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
@@ -137,7 +142,7 @@ export default function SettingsPage() {
     };
 
     if (!trimmedData.contact_email || !isValidEmail(trimmedData.contact_email)) {
-      toast.error("Email de contacto no válido");
+      toast.error(t("invalidContactEmail"));
       return;
     }
 
@@ -149,11 +154,10 @@ export default function SettingsPage() {
       setFormData({
         contact_email: updatedSettings.contact_email
       });
-      toast.success("Configuración guardada correctamente");
+      toast.success(t("saved"));
     } catch (error) {
       console.error("Error updating settings:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al guardar la configuración";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("saveError")));
     } finally {
       setSaving(false);
     }
@@ -207,11 +211,10 @@ export default function SettingsPage() {
 
       const updatedSettings = await apiClient.updateSettings({ backup_config: backupConfig });
       setSettings(updatedSettings);
-      toast.success("Configuración de backup guardada");
+      toast.success(t("backupSaved"));
     } catch (error) {
       console.error("Error updating backup settings:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al guardar configuración de backup";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("backupSaveError")));
     } finally {
       setSavingBackup(false);
     }
@@ -241,8 +244,7 @@ export default function SettingsPage() {
         toast.error(result.message);
       }
     } catch (error) {
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al probar conexión";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("testConnectionError")));
     } finally {
       setTestingConnection(false);
     }
@@ -254,7 +256,7 @@ export default function SettingsPage() {
         <div className="min-h-[400px] flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando configuración...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       </AppWrapper>
@@ -268,9 +270,9 @@ export default function SettingsPage() {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <AiOutlineSetting className="text-3xl text-accent" />
-            <h1 className="text-3xl font-bold text-foreground">Configuración de la aplicación</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t("title")}</h1>
           </div>
-          <p className="text-muted-foreground">Gestiona la configuración general del sistema</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="space-y-8 max-w-3xl">
@@ -278,12 +280,12 @@ export default function SettingsPage() {
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
               <AiOutlineSetting className="text-accent" />
-              Configuración General
+              {t("general")}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="contact_email" className="block text-sm font-medium text-foreground mb-2">
-                  Email de contacto para trabajadores <span className="text-destructive">*</span>
+                  {t("contactEmail")} <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="email"
@@ -297,7 +299,7 @@ export default function SettingsPage() {
                   disabled={saving}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Este email aparecerá en los correos de recuperación de contraseña
+                  {t("contactEmailHelp")}
                 </p>
               </div>
 
@@ -307,7 +309,7 @@ export default function SettingsPage() {
                   disabled={saving}
                   className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? "Guardando..." : "Guardar"}
+                  {saving ? tc("saving") : tc("save")}
                 </button>
               </div>
             </form>
@@ -322,17 +324,17 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                   <AiOutlineUpload className="text-accent" />
-                  Importar trabajadores (CSV)
+                  {t("importWorkersTitle")}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Carga varios trabajadores a la vez desde un archivo CSV
+                  {t("importWorkersDesc")}
                 </p>
               </div>
               <Link
                 href="/settings/import-workers"
                 className="text-sm text-accent hover:underline whitespace-nowrap"
               >
-                Importar →
+                {t("importLink")}
               </Link>
             </div>
           </div>
@@ -342,13 +344,13 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                 <AiOutlineDatabase className="text-accent" />
-                Copias de Seguridad
+                {t("backupsTitle")}
               </h2>
               <Link
                 href="/backups"
                 className="text-sm text-accent hover:underline"
               >
-                Ver backups →
+                {t("viewBackups")}
               </Link>
             </div>
 
@@ -364,7 +366,7 @@ export default function SettingsPage() {
                   className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
                 />
                 <label htmlFor="backup_enabled" className="text-sm font-medium text-foreground">
-                  Activar backups automáticos
+                  {t("enableBackups")}
                 </label>
               </div>
 
@@ -372,24 +374,24 @@ export default function SettingsPage() {
                 <>
                   {/* Schedule */}
                   <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Programación</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">{t("schedule")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">Frecuencia</label>
+                        <label className="block text-sm font-medium text-foreground mb-2">{t("frequency")}</label>
                         <select
                           name="frequency"
                           value={backupForm.frequency}
                           onChange={handleBackupChange}
                           className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                         >
-                          <option value="daily">Diario</option>
-                          <option value="weekly">Semanal</option>
-                          <option value="monthly">Mensual</option>
+                          <option value="daily">{t("freqDaily")}</option>
+                          <option value="weekly">{t("freqWeekly")}</option>
+                          <option value="monthly">{t("freqMonthly")}</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">Hora (UTC)</label>
+                        <label className="block text-sm font-medium text-foreground mb-2">{t("timeUtc")}</label>
                         <input
                           type="time"
                           name="time"
@@ -401,27 +403,23 @@ export default function SettingsPage() {
 
                       {backupForm.frequency === "weekly" && (
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Día de la semana</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">{t("dayOfWeek")}</label>
                           <select
                             name="day_of_week"
                             value={backupForm.day_of_week}
                             onChange={handleBackupChange}
                             className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                           >
-                            <option value={0}>Lunes</option>
-                            <option value={1}>Martes</option>
-                            <option value={2}>Miércoles</option>
-                            <option value={3}>Jueves</option>
-                            <option value={4}>Viernes</option>
-                            <option value={5}>Sábado</option>
-                            <option value={6}>Domingo</option>
+                            {t.raw("weekdays").map((day: string, i: number) => (
+                            <option key={i} value={i}>{day}</option>
+                          ))}
                           </select>
                         </div>
                       )}
 
                       {backupForm.frequency === "monthly" && (
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Día del mes</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">{t("dayOfMonth")}</label>
                           <input
                             type="number"
                             name="day_of_month"
@@ -438,9 +436,9 @@ export default function SettingsPage() {
 
                   {/* Retention */}
                   <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Retención</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">{t("retention")}</h3>
                     <div className="max-w-xs">
-                      <label className="block text-sm font-medium text-foreground mb-2">Días de retención</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t("retentionDays")}</label>
                       <input
                         type="number"
                         name="retention_days"
@@ -451,25 +449,25 @@ export default function SettingsPage() {
                         className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Los backups más antiguos se eliminarán automáticamente (730 días = 2 años)
+                        {t("retentionHelp")}
                       </p>
                     </div>
                   </div>
 
                   {/* Storage Type */}
                   <div className="border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Almacenamiento</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">{t("storage")}</h3>
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-foreground mb-2">Tipo de almacenamiento</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t("storageType")}</label>
                       <select
                         name="storage_type"
                         value={backupForm.storage_type}
                         onChange={handleBackupChange}
                         className="w-full max-w-xs px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       >
-                        <option value="local">Local (servidor)</option>
-                        <option value="s3">S3 (AWS, Backblaze B2, etc.)</option>
-                        <option value="sftp">SFTP</option>
+                        <option value="local">{t("storageLocal")}</option>
+                        <option value="s3">{t("storageS3")}</option>
+                        <option value="sftp">{t("storageSftp")}</option>
                       </select>
                     </div>
 
@@ -478,11 +476,11 @@ export default function SettingsPage() {
                       <div className="bg-muted/30 rounded-lg p-4 space-y-4">
                         <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
                           <AiOutlineCloudServer />
-                          Configuración S3
+                          {t("s3Config")}
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Endpoint URL</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("s3Endpoint")}</label>
                             <input
                               type="url"
                               name="s3_endpoint_url"
@@ -493,7 +491,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Bucket</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("s3Bucket")}</label>
                             <input
                               type="text"
                               name="s3_bucket_name"
@@ -504,7 +502,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Access Key ID</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("s3AccessKey")}</label>
                             <input
                               type="text"
                               name="s3_access_key_id"
@@ -515,7 +513,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Secret Access Key</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("s3SecretKey")}</label>
                             <input
                               type="password"
                               name="s3_secret_access_key"
@@ -526,7 +524,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Región</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("s3Region")}</label>
                             <input
                               type="text"
                               name="s3_region"
@@ -539,7 +537,7 @@ export default function SettingsPage() {
                         </div>
                         {settings?.backup_config?.s3_configured && (
                           <p className="text-xs text-muted-foreground">
-                            Deja los campos de credenciales vacíos para mantener las actuales
+                            {t("credentialsKeepHelp")}
                           </p>
                         )}
                       </div>
@@ -548,10 +546,10 @@ export default function SettingsPage() {
                     {/* SFTP Config */}
                     {backupForm.storage_type === "sftp" && (
                       <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                        <h4 className="text-sm font-medium text-foreground">Configuración SFTP</h4>
+                        <h4 className="text-sm font-medium text-foreground">{t("sftpConfig")}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Host</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("sftpHost")}</label>
                             <input
                               type="text"
                               name="sftp_host"
@@ -562,7 +560,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Puerto</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("sftpPort")}</label>
                             <input
                               type="number"
                               name="sftp_port"
@@ -572,7 +570,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Usuario</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("sftpUser")}</label>
                             <input
                               type="text"
                               name="sftp_username"
@@ -582,7 +580,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Contraseña</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("sftpPassword")}</label>
                             <input
                               type="password"
                               name="sftp_password"
@@ -593,7 +591,7 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-foreground mb-2">Ruta remota</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t("sftpRemotePath")}</label>
                             <input
                               type="text"
                               name="sftp_remote_path"
@@ -610,9 +608,9 @@ export default function SettingsPage() {
                     {/* Local Config */}
                     {backupForm.storage_type === "local" && (
                       <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                        <h4 className="text-sm font-medium text-foreground">Configuración Local</h4>
+                        <h4 className="text-sm font-medium text-foreground">{t("localConfig")}</h4>
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">Ruta en el servidor</label>
+                          <label className="block text-sm font-medium text-foreground mb-2">{t("localPath")}</label>
                           <input
                             type="text"
                             name="local_path"
@@ -622,7 +620,7 @@ export default function SettingsPage() {
                             className="w-full max-w-md px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            Esta ruta debe estar montada como volumen en Docker (bind mount al host)
+                            {t("localPathHelp")}
                           </p>
                         </div>
                       </div>
@@ -638,7 +636,7 @@ export default function SettingsPage() {
                   disabled={savingBackup}
                   className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {savingBackup ? "Guardando..." : "Guardar configuración"}
+                  {savingBackup ? tc("saving") : t("saveBackup")}
                 </button>
 
                 {backupForm.enabled && (
@@ -648,7 +646,7 @@ export default function SettingsPage() {
                     disabled={testingConnection}
                     className="bg-secondary text-secondary-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {testingConnection ? "Probando..." : "Probar conexión"}
+                    {testingConnection ? t("testing") : t("testConnection")}
                   </button>
                 )}
               </div>

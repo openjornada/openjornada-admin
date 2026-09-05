@@ -2,41 +2,43 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { AiOutlineUser, AiOutlineBell } from "react-icons/ai";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/RealtimeProvider";
 import { formatToLocalTime } from "@/utils/dateFormatters";
+import LanguageSelector from "@/components/LanguageSelector";
 import type { NotificationItem } from "@/lib/api-client";
-
-const RECORD_TYPE_LABELS: Record<string, string> = {
-  entry: "Entrada",
-  exit: "Salida",
-  pause_start: "Inicio Pausa",
-  pause_end: "Fin Pausa",
-};
 
 // Human-readable line for a notification; falls back to the raw type for
 // event kinds without a dedicated renderer yet.
-function describeNotification(notification: NotificationItem): string {
+function describeNotification(
+  notification: NotificationItem,
+  recordTypeLabel: (type: string) => string,
+  fichajeFallback: string
+): string {
   const p = notification.payload as {
     worker_name?: string;
     record_type?: string;
     company_name?: string;
   };
   if (notification.type === "fichaje.created") {
-    const recordType = p.record_type
-      ? RECORD_TYPE_LABELS[p.record_type] || p.record_type
-      : "";
-    const parts = [p.worker_name || "Fichaje", recordType, p.company_name].filter(Boolean);
+    const recordType = p.record_type ? recordTypeLabel(p.record_type) : "";
+    const parts = [p.worker_name || fichajeFallback, recordType, p.company_name].filter(Boolean);
     return parts.join(" — ");
   }
   return notification.type;
 }
 
 export default function TopNav() {
+  const t = useTranslations("topnav");
+  const tr = useTranslations("common.recordTypes");
   const { user } = useAuth();
   const { unreadCount, notifications, markRead, refreshNotifications } = useNotifications();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const recordTypeLabel = (type: string) =>
+    tr.has(type) ? tr(type) : type;
 
   // Close the dropdown on outside click
   useEffect(() => {
@@ -68,11 +70,14 @@ export default function TopNav() {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Language selector */}
+        <LanguageSelector />
+
         {/* Notifications */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleDropdown}
-            aria-label="Notificaciones"
+            aria-label={t("notificationsAria")}
             aria-haspopup="true"
             aria-expanded={open}
             className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -89,20 +94,20 @@ export default function TopNav() {
           {open && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <p className="text-sm font-medium text-foreground">Notificaciones</p>
+                <p className="text-sm font-medium text-foreground">{t("notifications")}</p>
                 {notifications.length > 0 && (
                   <button
                     onClick={() => void markRead(notifications.map((n) => n.id))}
                     className="text-xs text-accent hover:underline"
                   >
-                    Marcar todas como leídas
+                    {t("markAllRead")}
                   </button>
                 )}
               </div>
               <div className="max-h-80 overflow-y-auto divide-y divide-border">
                 {notifications.length === 0 ? (
                   <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                    No hay notificaciones sin leer
+                    {t("noUnread")}
                   </p>
                 ) : (
                   notifications.map((notification) => (
@@ -112,7 +117,7 @@ export default function TopNav() {
                     >
                       <div className="min-w-0">
                         <p className="text-sm text-foreground truncate">
-                          {describeNotification(notification)}
+                          {describeNotification(notification, recordTypeLabel, t("fichajeFallback"))}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {formatToLocalTime(notification.created_at)}
@@ -122,7 +127,7 @@ export default function TopNav() {
                         onClick={() => void markRead([notification.id])}
                         className="shrink-0 text-xs text-accent hover:underline"
                       >
-                        Leída
+                        {t("markRead")}
                       </button>
                     </div>
                   ))
@@ -136,9 +141,9 @@ export default function TopNav() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="text-sm font-medium text-foreground">
-              {user?.username || "Admin"}
+              {user?.username || t("defaultUser")}
             </p>
-            <p className="text-xs text-muted-foreground">Administrador</p>
+            <p className="text-xs text-muted-foreground">{t("adminRole")}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
             <AiOutlineUser className="text-xl text-accent-foreground" />

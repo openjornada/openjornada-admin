@@ -2,10 +2,12 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import { apiClient } from "@/lib/api-client";
 import type { SmsMessage, Worker } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineMessage, AiOutlineDelete } from "react-icons/ai";
 import SmsHistoryTable from "@/components/sms/SmsHistoryTable";
 import { getCurrentMonthRange } from "@/utils/dateFormatters";
@@ -13,6 +15,8 @@ import { getCurrentMonthRange } from "@/utils/dateFormatters";
 const PAGE_SIZE = 25;
 
 function SmsHistoryContent() {
+  const t = useTranslations("sms.history");
+  const tc = useTranslations("common");
   const searchParams = useSearchParams();
 
   const [messages, setMessages] = useState<SmsMessage[]>([]);
@@ -87,7 +91,7 @@ function SmsHistoryContent() {
       setPage(currentPage);
     } catch (error) {
       console.error("Error loading SMS history:", error);
-      toast.error("Error al cargar el historial de SMS");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
       setFiltering(false);
@@ -111,13 +115,13 @@ function SmsHistoryContent() {
     setClearing(true);
     try {
       const result = await apiClient.clearSmsHistory();
-      toast.success(`Historial eliminado (${result.deleted} mensajes)`);
+      toast.success(t("cleared", { count: result.deleted }));
       setShowClearModal(false);
       setClearConfirmed(false);
       loadMessages(0);
     } catch (error) {
       console.error("Error clearing SMS history:", error);
-      toast.error("Error al limpiar el historial de SMS");
+      toast.error(getApiErrorMessage(error, t("clearError")));
     } finally {
       setClearing(false);
     }
@@ -131,9 +135,9 @@ function SmsHistoryContent() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <AiOutlineMessage />
-          Historial SMS
+          {t("title")}
         </h1>
-        <p className="text-muted-foreground">Registro de todos los mensajes SMS enviados</p>
+        <p className="text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {/* Clear history button */}
@@ -144,7 +148,7 @@ function SmsHistoryContent() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity text-sm"
           >
             <AiOutlineDelete />
-            Limpiar historial
+            {t("clearBtn")}
           </button>
         </div>
       )}
@@ -154,7 +158,7 @@ function SmsHistoryContent() {
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[180px]">
             <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
-              Fecha de inicio
+              {tc("startDate")}
             </label>
             <input
               type="date"
@@ -167,7 +171,7 @@ function SmsHistoryContent() {
 
           <div className="flex-1 min-w-[180px]">
             <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
-              Fecha de fin
+              {tc("endDate")}
             </label>
             <input
               type="date"
@@ -180,7 +184,7 @@ function SmsHistoryContent() {
 
           <div className="flex-1 min-w-[200px]">
             <label htmlFor="worker" className="block text-sm font-medium text-foreground mb-2">
-              Trabajador
+              {t("colWorker")}
             </label>
             <select
               id="worker"
@@ -188,7 +192,7 @@ function SmsHistoryContent() {
               onChange={(e) => setSelectedWorkerId(e.target.value)}
               className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              <option value="">Todos los trabajadores</option>
+              <option value="">{t("allWorkers")}</option>
               {workers.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.first_name} {w.last_name}
@@ -199,7 +203,7 @@ function SmsHistoryContent() {
 
           <div className="flex-1 min-w-[160px]">
             <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-              Estado
+              {t("colStatus")}
             </label>
             <select
               id="status"
@@ -207,11 +211,11 @@ function SmsHistoryContent() {
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              <option value="">Todos los estados</option>
-              <option value="pending">Pendiente</option>
-              <option value="sent">Enviado</option>
-              <option value="delivered">Entregado</option>
-              <option value="failed">Fallido</option>
+              <option value="">{t("allStatuses")}</option>
+              <option value="pending">{tc("smsStatus.pending")}</option>
+              <option value="sent">{tc("smsStatus.sent")}</option>
+              <option value="delivered">{tc("smsStatus.delivered")}</option>
+              <option value="failed">{tc("smsStatus.failed")}</option>
             </select>
           </div>
 
@@ -220,14 +224,14 @@ function SmsHistoryContent() {
             disabled={filtering}
             className="bg-accent text-accent-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {filtering ? "Filtrando..." : "Filtrar"}
+            {filtering ? tc("filtering") : tc("filter")}
           </button>
 
           <button
             onClick={handleClearFilters}
             className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
-            Limpiar
+            {tc("clearFilters")}
           </button>
         </div>
       </div>
@@ -241,7 +245,7 @@ function SmsHistoryContent() {
       {!loading && total > 0 && (
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Mostrando {page * PAGE_SIZE + 1}-{Math.min((page + 1) * PAGE_SIZE, total)} de {total} mensajes
+            {t("showing", { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, total), total })}
           </span>
           <div className="flex gap-2">
             <button
@@ -249,17 +253,17 @@ function SmsHistoryContent() {
               disabled={page === 0 || filtering}
               className="px-3 py-1 border border-border rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Anterior
+              {t("prev")}
             </button>
             <span className="px-3 py-1">
-              Página {page + 1} de {totalPages}
+              {t("page", { page: page + 1, total: totalPages })}
             </span>
             <button
               onClick={() => loadMessages(page + 1)}
               disabled={page >= totalPages - 1 || filtering}
               className="px-3 py-1 border border-border rounded-lg hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Siguiente
+              {t("next")}
             </button>
           </div>
         </div>
@@ -282,11 +286,10 @@ function SmsHistoryContent() {
             ref={clearModalRef}
           >
             <h3 id="clear-modal-title" className="text-lg font-semibold text-foreground mb-2">
-              Limpiar historial SMS
+              {t("clearModalTitle")}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Se eliminarán <strong className="text-foreground">todos</strong> los mensajes del historial
-              de SMS, independientemente de los filtros activos. Esta acción no se puede deshacer.
+              {t("clearModalBody")}
             </p>
             <label className="flex items-start gap-2 mb-6 cursor-pointer">
               <input
@@ -297,7 +300,7 @@ function SmsHistoryContent() {
                 disabled={clearing}
               />
               <span className="text-sm text-foreground">
-                Entiendo que esta acción eliminará todo el historial y no se puede deshacer.
+                {t("clearConfirm")}
               </span>
             </label>
             <div className="flex gap-3">
@@ -307,7 +310,7 @@ function SmsHistoryContent() {
                 disabled={clearing}
                 className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Cancelar
+                {tc("cancel")}
               </button>
               <button
                 type="button"
@@ -315,7 +318,7 @@ function SmsHistoryContent() {
                 disabled={clearing || !clearConfirmed}
                 className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {clearing ? "Eliminando..." : "Eliminar todo"}
+                {clearing ? t("clearing") : t("clearAll")}
               </button>
             </div>
           </div>
@@ -326,13 +329,14 @@ function SmsHistoryContent() {
 }
 
 export default function SmsHistoryPage() {
+  const t = useTranslations("sms.history");
   return (
     <AppWrapper>
       <Suspense
         fallback={
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando historial...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         }
       >

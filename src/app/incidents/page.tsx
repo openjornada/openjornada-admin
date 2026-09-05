@@ -1,18 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import { apiClient, Incident } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineAlert, AiOutlineEye } from "react-icons/ai";
 import { useRouter } from "next/navigation";
-import { getCurrentMonthRange } from "@/utils/dateFormatters";
-
-const statusLabels = {
-  pending: "Pendiente",
-  in_review: "En revisión",
-  resolved: "Resuelta"
-};
+import { formatDateTimeLocale, getCurrentMonthRange } from "@/utils/dateFormatters";
 
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -21,6 +17,8 @@ const statusColors = {
 };
 
 export default function IncidentsPage() {
+  const t = useTranslations("incidents");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +50,7 @@ export default function IncidentsPage() {
       setIncidents(data);
     } catch (error) {
       console.error("Error loading incidents:", error);
-      toast.error("Error al cargar incidencias");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
       setFiltering(false);
@@ -76,17 +74,6 @@ export default function IncidentsPage() {
     loadIncidents({ start_date: monthRange.start, end_date: monthRange.end });
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const truncateText = (text: string, maxLength: number = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
@@ -106,9 +93,9 @@ export default function IncidentsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineAlert />
-            Incidencias
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground">Gestiona las incidencias reportadas por los trabajadores</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* Filters */}
@@ -117,12 +104,12 @@ export default function IncidentsPage() {
             {/* Search by worker name */}
             <div>
               <label htmlFor="search" className="block text-sm font-medium text-foreground mb-2">
-                Buscar por trabajador
+                {tc("searchWorker")}
               </label>
               <input
                 type="text"
                 id="search"
-                placeholder="Buscar por nombre o apellidos..."
+                placeholder={tc("searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
@@ -133,7 +120,7 @@ export default function IncidentsPage() {
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                  Estado
+                  {tc("status")}
                 </label>
                 <select
                   id="status"
@@ -141,16 +128,16 @@ export default function IncidentsPage() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
-                  <option value="">Todas</option>
-                  <option value="pending">Pendiente</option>
-                  <option value="in_review">En revisión</option>
-                  <option value="resolved">Resuelta</option>
+                  <option value="">{tc("all")}</option>
+                  <option value="pending">{tc("statuses.pending")}</option>
+                  <option value="in_review">{tc("statuses.in_review")}</option>
+                  <option value="resolved">{tc("statuses.resolved")}</option>
                 </select>
               </div>
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de inicio
+                  {tc("startDate")}
                 </label>
                 <input
                   type="date"
@@ -163,7 +150,7 @@ export default function IncidentsPage() {
 
               <div className="flex-1 min-w-[200px]">
                 <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
-                  Fecha de fin
+                  {tc("endDate")}
                 </label>
                 <input
                   type="date"
@@ -179,14 +166,14 @@ export default function IncidentsPage() {
                 disabled={filtering}
                 className="bg-accent text-accent-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {filtering ? "Filtrando..." : "Filtrar"}
+                {filtering ? tc("filtering") : tc("filter")}
               </button>
 
               <button
                 onClick={handleClearFilters}
                 className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Limpiar
+                {tc("clearFilters")}
               </button>
             </div>
           </div>
@@ -197,13 +184,13 @@ export default function IncidentsPage() {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando incidencias...</p>
+              <p className="text-muted-foreground">{t("loading")}</p>
             </div>
           ) : filteredIncidents.length === 0 ? (
             <div className="p-8 text-center">
               <AiOutlineAlert className="text-6xl text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchTerm ? "No se encontraron incidencias que coincidan con tu búsqueda" : "No hay incidencias para mostrar"}
+                {searchTerm ? t("emptyFiltered") : t("empty")}
               </p>
             </div>
           ) : (
@@ -212,22 +199,22 @@ export default function IncidentsPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Trabajador
+                      {tc("worker")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Email
+                      {tc("email")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Estado
+                      {tc("status")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Fecha creación
+                      {tc("createdAt")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Descripción
+                      {t("descriptionCol")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
+                      {tc("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -257,11 +244,11 @@ export default function IncidentsPage() {
                             statusColors[incident.status]
                           }`}
                         >
-                          {statusLabels[incident.status]}
+                          {tc(`statuses.${incident.status}`)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {formatDateTime(incident.created_at)}
+                        {formatDateTimeLocale(incident.created_at)}
                       </td>
                       <td className="px-6 py-4 text-sm text-muted-foreground max-w-xs">
                         {truncateText(incident.description)}
@@ -275,7 +262,7 @@ export default function IncidentsPage() {
                           className="text-accent hover:text-accent/80 font-medium inline-flex items-center gap-1"
                         >
                           <AiOutlineEye className="text-lg" />
-                          Ver detalle
+                          {tc("viewDetail")}
                         </button>
                       </td>
                     </tr>
@@ -289,9 +276,9 @@ export default function IncidentsPage() {
         {/* Summary */}
         {filteredIncidents.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Mostrando {filteredIncidents.length} incidencia{filteredIncidents.length !== 1 ? "s" : ""}
-            {searchTerm && ` (filtrado por "${searchTerm}")`}
-            {incidents.length !== filteredIncidents.length && ` de ${incidents.length} total${incidents.length !== 1 ? "es" : ""}`}
+            {searchTerm
+              ? t("showingFiltered", { shown: filteredIncidents.length, total: incidents.length, term: searchTerm })
+              : t("showing", { count: filteredIncidents.length })}
           </div>
         )}
       </div>

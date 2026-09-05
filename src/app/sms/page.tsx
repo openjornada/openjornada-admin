@@ -1,20 +1,31 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import type { SmsConfig, SmsCredits, SmsStats, SmsTemplateResponse } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
+import { isGsm7, smsLength, smsSegmentLimit } from "@/lib/sms-segment";
 import { AiOutlineMessage, AiOutlineCheckCircle, AiOutlineCloseCircle } from "react-icons/ai";
 import SmsCreditsBadge from "@/components/sms/SmsCreditsBadge";
 
+/** Minimum characters accepted for a customized template. */
+const MIN_TEMPLATE_LENGTH = 10;
+
 export default function SmsPage() {
+  const t = useTranslations("sms");
+  const tt = useTranslations("sms.template");
+  const tc = useTranslations("common");
   const [, setConfig] = useState<SmsConfig | null>(null);
   const [credits, setCredits] = useState<SmsCredits | null>(null);
   const [stats, setStats] = useState<SmsStats | null>(null);
   const [templateData, setTemplateData] = useState<SmsTemplateResponse | null>(null);
-  const [templateText, setTemplateText] = useState("");
+  // Per-locale template texts (customized value or default), edited in tabs.
+  const [texts, setTexts] = useState<Record<string, string>>({});
+  const [activeLocale, setActiveLocale] = useState<string>("es");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,7 +44,17 @@ export default function SmsPage() {
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Build the editable per-locale map: customized text ?? default text. */
+  const buildTexts = (data: SmsTemplateResponse): Record<string, string> => {
+    const map: Record<string, string> = {};
+    for (const locale of data.supported_locales) {
+      map[locale] = data.templates[locale] ?? data.default_templates[locale] ?? "";
+    }
+    return map;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -67,12 +88,17 @@ export default function SmsPage() {
       }
 
       if (templateResult.status === "fulfilled") {
-        setTemplateData(templateResult.value);
-        setTemplateText(templateResult.value.template);
+        const data = templateResult.value;
+        setTemplateData(data);
+        setTexts(buildTexts(data));
+        // Start on the admin's current UI locale when supported, else first.
+        setActiveLocale((prev) =>
+          data.supported_locales.includes(prev) ? prev : data.supported_locales[0] ?? "es"
+        );
       }
     } catch (error) {
       console.error("Error fetching SMS data:", error);
-      toast.error("Error al cargar la configuración SMS");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
@@ -114,35 +140,61 @@ export default function SmsPage() {
         active_hours_start: updated.active_hours_start,
         active_hours_end: updated.active_hours_end,
       });
-      toast.success("Configuración SMS guardada correctamente");
+      toast.success(t("configSaved"));
     } catch (error) {
       console.error("Error saving SMS config:", error);
-      const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
-      let message = "Error al guardar la configuración SMS";
-      if (typeof detail === "string") {
-        message = detail;
-      } else if (Array.isArray(detail) && detail.length > 0) {
-        message = detail.map((e: { msg?: string }) => e.msg || "").filter(Boolean).join("; ");
-      }
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("configSaveError")));
     } finally {
       setSaving(false);
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Template editor (per-locale tabs; the single-segment limit is surfaced on
+  // the raw text AND the preview, and enforced on save — never by discarding
+  // what the user typed)
+  // ---------------------------------------------------------------------------
+
+  const currentText = texts[activeLocale] ?? "";
+  const segmentLimit = smsSegmentLimit(currentText);
+  const segmentLength = smsLength(currentText);
+  const overLimit = segmentLength > segmentLimit;
+  const tooShort = currentText.length < MIN_TEMPLATE_LENGTH;
+  const isCustomized =
+    !!templateData &&
+    templateData.templates[activeLocale] !== undefined &&
+    templateData.templates[activeLocale] !== templateData.default_templates[activeLocale];
+  const isDirty = currentText !== (templateData?.templates[activeLocale] ?? templateData?.default_templates[activeLocale] ?? "");
+
+  /**
+   * Update the active tab's text unconditionally. Over-limit input is kept in
+   * state (never silently dropped) and surfaced via the red counter; saving is
+   * what blocks until the text fits one segment.
+   */
+  const setTemplateText = (next: string) => {
+    setTexts((prev) => ({ ...prev, [activeLocale]: next }));
+  };
+
   const handleSaveTemplate = async () => {
+    if (overLimit) return; // visible in the red counter + disabled Save button
+    if (tooShort) {
+      // The Save button is disabled for this too; the toast is defense in
+      // depth so the guard can never be a silent no-op.
+      toast.error(tt("tooShort", { min: MIN_TEMPLATE_LENGTH }));
+      return;
+    }
     setSavingTemplate(true);
     try {
-      const result = await apiClient.updateSmsTemplate({ template: templateText });
+      const result = await apiClient.updateSmsTemplate({
+        locale: activeLocale,
+        template: currentText,
+      });
       setTemplateData(result);
-      setTemplateText(result.template);
-      toast.success("Plantilla guardada correctamente");
+      setTexts(buildTexts(result));
+      toast.success(tt("saved"));
     } catch (error) {
       console.error("Error saving template:", error);
-      const message =
-        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Error al guardar la plantilla";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, tt("saveError")));
     } finally {
       setSavingTemplate(false);
     }
@@ -151,17 +203,47 @@ export default function SmsPage() {
   const handleResetTemplate = async () => {
     setSavingTemplate(true);
     try {
-      const result = await apiClient.resetSmsTemplate();
+      const result = await apiClient.resetSmsTemplate(activeLocale);
       setTemplateData(result);
-      setTemplateText(result.template);
-      toast.success("Plantilla restaurada por defecto");
+      setTexts(buildTexts(result));
+      toast.success(tt("resetDone"));
     } catch (error) {
       console.error("Error resetting template:", error);
-      toast.error("Error al restaurar la plantilla");
+      toast.error(getApiErrorMessage(error, tt("resetError")));
     } finally {
       setSavingTemplate(false);
     }
   };
+
+  const insertTag = (tag: string) => {
+    const textarea = templateRef.current;
+    const start = textarea ? textarea.selectionStart : currentText.length;
+    const end = textarea ? textarea.selectionEnd : currentText.length;
+    const newText = currentText.slice(0, start) + tag + currentText.slice(end);
+    // Accepted unconditionally (same policy as setTemplateText): an over-limit
+    // insertion is surfaced by the red counter and blocks saving.
+    setTexts((prev) => ({ ...prev, [activeLocale]: newText }));
+    if (textarea) {
+      // Restore cursor position after the inserted tag
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const pos = start + tag.length;
+        textarea.setSelectionRange(pos, pos);
+      });
+    }
+  };
+
+  const preview =
+    templateData?.available_tags.reduce(
+      (text, tag) => text.replaceAll(tag.tag, tag.example),
+      currentText
+    ) ?? currentText;
+
+  // The counter measures the RAW template, but at send time the tags are
+  // substituted by real values: a template that fits one segment can still
+  // overflow once expanded. Warn (don't block) when the preview exceeds.
+  const previewOverflow =
+    !overLimit && smsLength(preview) > smsSegmentLimit(preview);
 
   if (loading) {
     return (
@@ -169,7 +251,7 @@ export default function SmsPage() {
         <div className="min-h-[400px] flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando configuración SMS...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       </AppWrapper>
@@ -183,43 +265,41 @@ export default function SmsPage() {
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
             <AiOutlineMessage className="text-3xl text-accent" />
-            <h1 className="text-3xl font-bold text-foreground">Recordatorios SMS</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t("title")}</h1>
           </div>
-          <p className="text-muted-foreground">
-            Configura el envío automático de recordatorios SMS a los trabajadores
-          </p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="space-y-6 max-w-3xl">
-          {/* Estado del servicio */}
+          {/* Service status */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
               <AiOutlineMessage className="text-accent" />
-              Estado del servicio SMS
+              {t("serviceStatus")}
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Activo/Inactivo */}
+              {/* Active/Inactive */}
               <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">Estado</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("stateLabel")}</p>
                 <div className="flex items-center justify-center gap-1">
                   {credits?.provider_enabled && formData.enabled ? (
                     <>
                       <AiOutlineCheckCircle className="text-xl text-green-600 dark:text-green-400" />
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">Activo</span>
+                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">{tc("active")}</span>
                     </>
                   ) : (
                     <>
                       <AiOutlineCloseCircle className="text-xl text-muted-foreground" />
-                      <span className="text-sm font-semibold text-muted-foreground">Inactivo</span>
+                      <span className="text-sm font-semibold text-muted-foreground">{tc("inactive")}</span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Créditos */}
+              {/* Credits */}
               <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">Créditos</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("creditsLabel")}</p>
                 {credits ? (
                   <SmsCreditsBadge balance={credits.balance} currency={credits.currency} unlimited={credits.unlimited} />
                 ) : (
@@ -227,17 +307,17 @@ export default function SmsPage() {
                 )}
               </div>
 
-              {/* SMS este mes */}
+              {/* SMS this month */}
               <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">Este mes</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("thisMonthLabel")}</p>
                 <p className="text-2xl font-bold text-foreground">
                   {stats ? stats.sent_this_month : "-"}
                 </p>
               </div>
 
-              {/* Pendientes */}
+              {/* Pending */}
               <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">Pendientes</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("pendingLabel")}</p>
                 <p className={`text-2xl font-bold ${stats && stats.pending > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-foreground"}`}>
                   {stats ? stats.pending : "-"}
                 </p>
@@ -248,7 +328,7 @@ export default function SmsPage() {
               <div className="mt-4 flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <AiOutlineCloseCircle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  El proveedor SMS no está configurado. Activa la variable de entorno <code className="bg-yellow-100 dark:bg-yellow-900/40 px-1 rounded">SMS_ENABLED=true</code> y configura las credenciales del proveedor para habilitar el envío de SMS.
+                  {t("providerNotConfigured", { env: "SMS_ENABLED=true" })}
                 </p>
               </div>
             )}
@@ -257,70 +337,113 @@ export default function SmsPage() {
               <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <AiOutlineCloseCircle className="text-destructive flex-shrink-0" />
                 <p className="text-sm text-destructive">
-                  Hay <strong>{stats.failed_today}</strong> SMS fallidos hoy.{" "}
+                  {t("failedToday", { count: stats.failed_today })}{" "}
                   <Link href="/sms/history?status=failed" className="underline font-medium">
-                    Ver detalles
+                    {t("viewDetails")}
                   </Link>
                 </p>
               </div>
             )}
           </div>
 
-          {/* Plantilla del mensaje */}
+          {/* Message template (per-locale tabs) */}
           {templateData && (
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-1 flex items-center gap-2">
                 <AiOutlineMessage className="text-accent" />
-                Plantilla del mensaje
+                {tt("title")}
               </h2>
+              <p className="text-xs text-muted-foreground mb-4">{tt("companyLanguageNote")}</p>
+
+              {/* Locale tabs */}
+              <div role="tablist" aria-label={tt("tabsAria")} className="flex gap-1 border-b border-border mb-4">
+                {templateData.supported_locales.map((locale) => {
+                  const customized =
+                    templateData.templates[locale] !== undefined &&
+                    templateData.templates[locale] !== templateData.default_templates[locale];
+                  const selected = locale === activeLocale;
+                  return (
+                    <button
+                      key={locale}
+                      role="tab"
+                      aria-selected={selected}
+                      type="button"
+                      onClick={() => setActiveLocale(locale)}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition-colors ${
+                        selected
+                          ? "border-accent text-accent"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {locale.toUpperCase()}
+                      {customized && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full bg-accent"
+                          title={tt("customized")}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
               <div className="space-y-4">
-                {/* Textarea */}
-                <div>
-                  <label htmlFor="sms_template" className="block text-sm font-medium text-foreground mb-2">
-                    Texto del SMS
+                {/* Customized / default indicator */}
+                <div className="flex items-center justify-between">
+                  <label htmlFor="sms_template" className="block text-sm font-medium text-foreground">
+                    {tt("textLabel")} — {tc(`language.${activeLocale}`)}
                   </label>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      isCustomized
+                        ? "bg-accent/10 text-accent border border-accent/20"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {isCustomized ? tt("customized") : tt("default")}
+                  </span>
+                </div>
+
+                {/* Textarea (over-limit input is kept and flagged; saving is blocked) */}
+                <div>
                   <textarea
                     ref={templateRef}
                     id="sms_template"
-                    value={templateText}
+                    value={currentText}
                     onChange={(e) => setTemplateText(e.target.value)}
-                    maxLength={480}
                     rows={4}
-                    className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-vertical font-mono text-sm"
+                    className={`w-full px-4 py-2 border bg-background rounded-lg focus:outline-none focus:ring-2 resize-vertical font-mono text-sm ${
+                      overLimit
+                        ? "border-destructive focus:ring-destructive"
+                        : "border-input focus:ring-accent"
+                    }`}
                     disabled={savingTemplate}
                   />
-                  <p className="text-xs text-muted-foreground mt-1 text-right">
-                    {templateText.length}/480
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-muted-foreground">{tt("encodingNote")}</p>
+                    <p
+                      className={`text-xs mt-1 text-right font-medium ${
+                        overLimit ? "text-destructive" : isGsm7(currentText) ? "text-muted-foreground" : "text-yellow-600 dark:text-yellow-400"
+                      }`}
+                    >
+                      {overLimit
+                        ? tt("overLimit", { length: segmentLength, limit: segmentLimit })
+                        : tt("counter", { length: segmentLength, limit: segmentLimit })}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Etiquetas disponibles */}
+                {/* Available tags */}
                 <div>
-                  <p className="text-sm font-medium text-foreground mb-2">Etiquetas disponibles</p>
+                  <p className="text-sm font-medium text-foreground mb-2">{tt("tagsTitle")}</p>
                   <div className="flex flex-wrap gap-2">
                     {templateData.available_tags.map((tag) => (
                       <button
                         key={tag.tag}
                         type="button"
-                        title={`${tag.description} (ej: ${tag.example})`}
+                        title={tt("tagHint", { description: tag.description, example: tag.example })}
                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors"
-                        onClick={() => {
-                          const textarea = templateRef.current;
-                          if (!textarea) return;
-                          const start = textarea.selectionStart;
-                          const end = textarea.selectionEnd;
-                          const newText = templateText.slice(0, start) + tag.tag + templateText.slice(end);
-                          if (newText.length <= 480) {
-                            setTemplateText(newText);
-                            // Restore cursor position after the inserted tag
-                            requestAnimationFrame(() => {
-                              textarea.focus();
-                              const pos = start + tag.tag.length;
-                              textarea.setSelectionRange(pos, pos);
-                            });
-                          }
-                        }}
+                        onClick={() => insertTag(tag.tag)}
                       >
                         {tag.tag}
                       </button>
@@ -328,36 +451,45 @@ export default function SmsPage() {
                   </div>
                 </div>
 
-                {/* Vista previa */}
+                {/* Preview with sample values */}
                 <div>
-                  <p className="text-sm font-medium text-foreground mb-2">Vista previa</p>
+                  <p className="text-sm font-medium text-foreground mb-2">{tt("previewTitle")}</p>
                   <div className="bg-muted/30 border border-border rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap">
-                    {templateData.available_tags.reduce(
-                      (text, tag) => text.replaceAll(tag.tag, tag.example),
-                      templateText
-                    )}
+                    {preview}
                   </div>
+                  {previewOverflow && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                      {tt("previewOverflow")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Botones */}
+                {/* Actions */}
                 <div className="flex items-center gap-3 pt-2 border-t border-border">
                   <button
                     type="button"
-                    disabled={savingTemplate}
+                    disabled={savingTemplate || overLimit || tooShort || !isDirty}
                     onClick={handleSaveTemplate}
+                    title={
+                      overLimit
+                        ? tt("overLimit", { length: segmentLength, limit: segmentLimit })
+                        : tooShort
+                        ? tt("tooShort", { min: MIN_TEMPLATE_LENGTH })
+                        : undefined
+                    }
                     className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {savingTemplate ? "Guardando..." : "Guardar plantilla"}
+                    {savingTemplate ? tt("saving") : tt("save")}
                   </button>
 
-                  {templateText !== templateData.default_template && (
+                  {isCustomized && (
                     <button
                       type="button"
                       disabled={savingTemplate}
                       onClick={handleResetTemplate}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      Restaurar por defecto
+                      {tt("reset")}
                     </button>
                   )}
                 </div>
@@ -365,15 +497,15 @@ export default function SmsPage() {
             </div>
           )}
 
-          {/* Configuración de recordatorios */}
+          {/* Reminder configuration */}
           <div className="bg-card border border-border rounded-lg p-6">
             <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
               <AiOutlineMessage className="text-accent" />
-              Configuración de Recordatorios
+              {t("configTitle")}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Toggle activar */}
+              {/* Enable toggle */}
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -384,7 +516,7 @@ export default function SmsPage() {
                   className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
                 />
                 <label htmlFor="sms_enabled" className="text-sm font-medium text-foreground">
-                  Activar recordatorios SMS automáticos
+                  {t("enableReminders")}
                 </label>
               </div>
 
@@ -393,7 +525,7 @@ export default function SmsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="first_reminder_minutes" className="block text-sm font-medium text-foreground mb-2">
-                      Primer recordatorio (minutos)
+                      {t("firstReminder")}
                     </label>
                     <input
                       type="number"
@@ -406,14 +538,12 @@ export default function SmsPage() {
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       disabled={saving}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Minutos después del inicio de jornada sin registrar
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("firstReminderHelp")}</p>
                   </div>
 
                   <div>
                     <label htmlFor="reminder_frequency_minutes" className="block text-sm font-medium text-foreground mb-2">
-                      Frecuencia de recordatorios (minutos)
+                      {t("frequency")}
                     </label>
                     <input
                       type="number"
@@ -426,14 +556,12 @@ export default function SmsPage() {
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       disabled={saving}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Intervalo entre recordatorios sucesivos
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("frequencyHelp")}</p>
                   </div>
 
                   <div>
                     <label htmlFor="max_reminders_per_day" className="block text-sm font-medium text-foreground mb-2">
-                      Máximo por día
+                      {t("maxPerDay")}
                     </label>
                     <input
                       type="number"
@@ -446,18 +574,16 @@ export default function SmsPage() {
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       disabled={saving}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Número máximo de SMS por trabajador por día
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("maxPerDayHelp")}</p>
                   </div>
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Horario activo</h3>
+                  <h3 className="text-sm font-semibold text-foreground mb-3">{t("activeHours")}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="active_hours_start" className="block text-sm font-medium text-foreground mb-2">
-                        Hora de inicio
+                        {t("startHour")}
                       </label>
                       <input
                         type="time"
@@ -472,7 +598,7 @@ export default function SmsPage() {
 
                     <div>
                       <label htmlFor="active_hours_end" className="block text-sm font-medium text-foreground mb-2">
-                        Hora de fin
+                        {t("endHour")}
                       </label>
                       <input
                         type="time"
@@ -485,9 +611,7 @@ export default function SmsPage() {
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Solo se enviarán recordatorios dentro de este horario
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">{t("activeHoursHelp")}</p>
                 </div>
               </div>
 
@@ -497,14 +621,14 @@ export default function SmsPage() {
                   disabled={saving}
                   className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? "Guardando..." : "Guardar configuración"}
+                  {saving ? tc("saving") : t("saveConfig")}
                 </button>
 
                 <Link
                   href="/sms/history"
                   className="text-sm text-accent hover:underline"
                 >
-                  Ver historial de SMS →
+                  {t("viewHistory")}
                 </Link>
               </div>
             </form>

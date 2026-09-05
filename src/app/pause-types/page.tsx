@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, type PauseType } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlinePlus, AiOutlineEdit, AiOutlineDelete, AiOutlinePauseCircle } from "react-icons/ai";
 
 export default function PauseTypesPage() {
+  const t = useTranslations("pauseTypes");
+  const tc = useTranslations("common");
   const [pauseTypes, setPauseTypes] = useState<PauseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -16,6 +20,7 @@ export default function PauseTypesPage() {
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
     loadPauseTypes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPauseTypes = async () => {
@@ -24,7 +29,7 @@ export default function PauseTypesPage() {
       setPauseTypes(data);
     } catch (error) {
       console.error("Error loading pause types:", error);
-      toast.error("Error al cargar los tipos de pausa");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
@@ -32,15 +37,11 @@ export default function PauseTypesPage() {
 
   const handleDelete = async (id: string, name: string, usageCount: number) => {
     if (usageCount > 0) {
-      if (!confirm(
-        `¿Está seguro de eliminar el tipo de pausa "${name}"?\n\n` +
-        `Este tipo ha sido usado en ${usageCount} registro(s). ` +
-        `Los registros existentes no se eliminarán, pero este tipo ya no estará disponible para nuevas pausas.`
-      )) {
+      if (!confirm(t("confirmDeleteUsed", { name, count: usageCount }))) {
         return;
       }
     } else {
-      if (!confirm(`¿Está seguro de eliminar el tipo de pausa "${name}"?`)) {
+      if (!confirm(t("confirmDeleteSimple", { name }))) {
         return;
       }
     }
@@ -49,19 +50,18 @@ export default function PauseTypesPage() {
 
     try {
       await apiClient.deletePauseType(id);
-      toast.success("Tipo de pausa eliminado correctamente");
+      toast.success(t("deleted"));
       loadPauseTypes();
     } catch (error) {
       console.error("Error deleting pause type:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al eliminar el tipo de pausa";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("deleteError")));
     } finally {
       setDeletingId(null);
     }
   };
 
   const getTypeLabel = (type: string) => {
-    return type === "inside_shift" ? "Dentro de jornada" : "Fuera de jornada";
+    return type === "inside_shift" ? t("insideShift") : t("outsideShift");
   };
 
   const getTypeBadgeClass = (type: string) => {
@@ -78,16 +78,16 @@ export default function PauseTypesPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <AiOutlinePauseCircle />
-              Tipos de Pausa
+              {t("title")}
             </h1>
-            <p className="text-muted-foreground">Gestiona los tipos de pausa disponibles para los trabajadores</p>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
           <Link
             href="/pause-types/new"
             className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
           >
             <AiOutlinePlus className="text-xl" />
-            <span>Nuevo Tipo de Pausa</span>
+            <span>{t("new")}</span>
           </Link>
         </div>
 
@@ -96,18 +96,18 @@ export default function PauseTypesPage() {
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando tipos de pausa...</p>
+              <p className="text-muted-foreground">{t("loading")}</p>
             </div>
           ) : pauseTypes.length === 0 ? (
             <div className="p-8 text-center">
               <AiOutlinePauseCircle className="text-6xl text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">No hay tipos de pausa registrados</p>
+              <p className="text-muted-foreground mb-4">{t("empty")}</p>
               <Link
                 href="/pause-types/new"
                 className="inline-flex items-center gap-2 text-accent hover:underline"
               >
                 <AiOutlinePlus />
-                <span>Crear primer tipo de pausa</span>
+                <span>{t("createFirst")}</span>
               </Link>
             </div>
           ) : (
@@ -116,19 +116,19 @@ export default function PauseTypesPage() {
                 <thead className="bg-muted">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Nombre
+                      {tc("name")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Tipo
+                      {tc("type")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Empresas
+                      {t("companiesCol")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Uso
+                      {t("usageCol")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Acciones
+                      {tc("actions")}
                     </th>
                   </tr>
                 </thead>
@@ -154,14 +154,14 @@ export default function PauseTypesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {pauseType.usage_count} registro{pauseType.usage_count !== 1 ? "s" : ""}
+                        {t("usageCount", { count: pauseType.usage_count })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/pause-types/${pauseType.id}/edit`}
                             className="text-accent hover:text-accent/80 p-2"
-                            title="Editar"
+                            title={tc("edit")}
                           >
                             <AiOutlineEdit className="text-xl" />
                           </Link>
@@ -169,7 +169,7 @@ export default function PauseTypesPage() {
                             onClick={() => handleDelete(pauseType.id, pauseType.name, pauseType.usage_count)}
                             disabled={deletingId === pauseType.id}
                             className="text-destructive hover:text-destructive/80 p-2 disabled:opacity-50"
-                            title="Eliminar"
+                            title={tc("delete")}
                           >
                             <AiOutlineDelete className="text-xl" />
                           </button>
@@ -186,7 +186,7 @@ export default function PauseTypesPage() {
         {/* Summary */}
         {pauseTypes.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Total: {pauseTypes.length} tipo{pauseTypes.length !== 1 ? "s" : ""} de pausa
+            {t("totalTypes", { count: pauseTypes.length })}
           </div>
         )}
       </div>

@@ -2,11 +2,14 @@
  * Shared SMS utility functions.
  */
 
+import { activeIntlLocale } from "@/i18n/active-locale";
+
 /**
- * Format an ISO date string for display in the es-ES locale.
+ * Format an ISO date string for display in the active UI locale
+ * (defaults to es-ES behavior when no locale has been applied yet).
  */
 export function formatSmsDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString("es-ES", {
+  return new Date(dateStr).toLocaleString(activeIntlLocale(), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

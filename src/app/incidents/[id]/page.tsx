@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, Incident } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineAlert } from "react-icons/ai";
-
-const statusLabels = {
-  pending: "Pendiente",
-  in_review: "En revisión",
-  resolved: "Resuelta"
-};
+import { formatDateTimeLocale } from "@/utils/dateFormatters";
 
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -21,6 +18,8 @@ const statusColors = {
 };
 
 export default function IncidentDetailPage() {
+  const t = useTranslations("incidents");
+  const tc = useTranslations("common");
   const router = useRouter();
   const params = useParams();
   const incidentId = params.id as string;
@@ -43,7 +42,7 @@ export default function IncidentDetailPage() {
       });
     } catch (error) {
       console.error("Error loading incident:", error);
-      toast.error("Error al cargar la incidencia");
+      toast.error(getApiErrorMessage(error, t("loadOneError")));
       router.push("/incidents");
     } finally {
       setLoading(false);
@@ -76,29 +75,16 @@ export default function IncidentDetailPage() {
       });
 
       setIncident(updatedIncident);
-      toast.success("Incidencia actualizada correctamente");
+      toast.success(t("saved"));
 
       // Refresh incident data to get latest timestamps
       await loadIncident();
     } catch (error) {
       console.error("Error updating incident:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al actualizar la incidencia";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("saveError")));
     } finally {
       setSaving(false);
     }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
   };
 
   if (loading) {
@@ -107,7 +93,7 @@ export default function IncidentDetailPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando incidencia...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       </AppWrapper>
@@ -120,9 +106,9 @@ export default function IncidentDetailPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <AiOutlineAlert className="text-6xl text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No se encontró la incidencia</p>
+            <p className="text-muted-foreground mb-4">{t("notFound")}</p>
             <Link href="/incidents" className="text-accent hover:underline">
-              Volver a incidencias
+              {t("backToList")}
             </Link>
           </div>
         </div>
@@ -137,13 +123,13 @@ export default function IncidentDetailPage() {
         <div className="mb-6">
           <Link href="/incidents" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a incidencias</span>
+            <span>{t("backToList")}</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineAlert />
-            Detalle de Incidencia
+            {t("detailTitle")}
           </h1>
-          <p className="text-muted-foreground">Revisa y gestiona la incidencia reportada</p>
+          <p className="text-muted-foreground">{t("detailSubtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,23 +137,23 @@ export default function IncidentDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Worker Info */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Información del Trabajador</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("workerInfo")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Nombre completo
+                    {t("fullName")}
                   </label>
                   <p className="text-foreground font-medium">{incident.worker_name}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    DNI/NIE
+                    {tc("dniNie")}
                   </label>
                   <p className="text-foreground font-medium">{incident.worker_id_number}</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Email
+                    {tc("email")}
                   </label>
                   <p className="text-foreground font-medium">{incident.worker_email}</p>
                 </div>
@@ -176,24 +162,24 @@ export default function IncidentDetailPage() {
 
             {/* Incident Details */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Detalles de la Incidencia</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("incidentDetails")}</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Estado actual
+                    {t("currentStatus")}
                   </label>
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
                       statusColors[incident.status]
                     }`}
                   >
-                    {statusLabels[incident.status]}
+                    {tc(`statuses.${incident.status}`)}
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-1">
-                    Descripción
+                    {t("description")}
                   </label>
                   <div className="bg-muted/30 rounded-lg p-4 text-foreground whitespace-pre-wrap">
                     {incident.description}
@@ -203,31 +189,31 @@ export default function IncidentDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">
-                      Fecha de creación
+                      {tc("createdAt")}
                     </label>
-                    <p className="text-foreground">{formatDateTime(incident.created_at)}</p>
+                    <p className="text-foreground">{formatDateTimeLocale(incident.created_at)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">
-                      Última actualización
+                      {t("updatedAt")}
                     </label>
-                    <p className="text-foreground">{formatDateTime(incident.updated_at)}</p>
+                    <p className="text-foreground">{formatDateTimeLocale(incident.updated_at)}</p>
                   </div>
                 </div>
 
                 {incident.resolved_at && (
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">
-                      Fecha de resolución
+                      {t("resolvedAt")}
                     </label>
-                    <p className="text-foreground">{formatDateTime(incident.resolved_at)}</p>
+                    <p className="text-foreground">{formatDateTimeLocale(incident.resolved_at)}</p>
                   </div>
                 )}
 
                 {incident.admin_notes && (
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">
-                      Notas del administrador
+                      {t("adminNotes")}
                     </label>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-foreground whitespace-pre-wrap">
                       {incident.admin_notes}
@@ -241,11 +227,11 @@ export default function IncidentDetailPage() {
           {/* Update Form */}
           <div className="lg:col-span-1">
             <div className="bg-card border border-border rounded-lg p-6 sticky top-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Actualizar Incidencia</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("updateTitle")}</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                    Estado <span className="text-destructive">*</span>
+                    {tc("status")} <span className="text-destructive">*</span>
                   </label>
                   <select
                     id="status"
@@ -255,15 +241,15 @@ export default function IncidentDetailPage() {
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     required
                   >
-                    <option value="pending">Pendiente</option>
-                    <option value="in_review">En revisión</option>
-                    <option value="resolved">Resuelta</option>
+                    <option value="pending">{tc("statuses.pending")}</option>
+                    <option value="in_review">{tc("statuses.in_review")}</option>
+                    <option value="resolved">{tc("statuses.resolved")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="admin_notes" className="block text-sm font-medium text-foreground mb-2">
-                    Notas del administrador
+                    {t("adminNotes")}
                   </label>
                   <textarea
                     id="admin_notes"
@@ -272,10 +258,10 @@ export default function IncidentDetailPage() {
                     onChange={handleChange}
                     rows={6}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none"
-                    placeholder="Añade notas internas sobre esta incidencia..."
+                    placeholder={t("notesPlaceholder")}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Estas notas son visibles solo para administradores
+                    {t("notesHelp")}
                   </p>
                 </div>
 
@@ -285,7 +271,7 @@ export default function IncidentDetailPage() {
                     disabled={saving}
                     className="w-full bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {saving ? "Guardando..." : "Guardar Cambios"}
+                    {saving ? tc("saving") : t("saveChanges")}
                   </button>
                 </div>
               </form>
@@ -295,7 +281,7 @@ export default function IncidentDetailPage() {
                   href="/incidents"
                   className="block w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity text-center"
                 >
-                  Volver al listado
+                  {t("backToListBtn")}
                 </Link>
               </div>
             </div>

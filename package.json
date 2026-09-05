@@ -26,6 +26,7 @@
     "@tailwindcss/postcss": "^4.1.9",
     "axios": "^1.7.7",
     "next": "^16.2.6",
+    "next-intl": "^4.14.2",
     "papaparse": "^5.7.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

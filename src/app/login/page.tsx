@@ -3,12 +3,16 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { appConfig } from "@/lib/config";
+import { getApiErrorMessage } from "@/lib/error-messages";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function LoginPage() {
+  const t = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,7 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error("Por favor ingrese email y contraseña");
+      toast.error(t("missingCredentials"));
       return;
     }
 
@@ -33,12 +37,10 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      toast.success("Inicio de sesión exitoso");
+      toast.success(t("loginSuccess"));
     } catch (error: unknown) {
       console.error("Login error:", error);
-      const err = error as { response?: { data?: { detail?: string } }; message?: string };
-      const message = err.response?.data?.detail || err.message || "Error al iniciar sesión";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, error instanceof Error && error.message ? error.message : t("loginError")));
     } finally {
       setLoading(false);
     }
@@ -46,6 +48,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute top-4 right-4">
+        <LanguageSelector scope="cookie" />
+      </div>
       <div className="w-full max-w-md">
         <div className="bg-card border border-border rounded-lg shadow-lg p-8">
           {/* Logo/Header */}
@@ -62,14 +67,14 @@ export default function LoginPage() {
               </div>
             )}
             <h1 className="text-3xl font-bold text-foreground mb-2">{appConfig.appName}</h1>
-            <p className="text-muted-foreground">Panel de Administración</p>
+            <p className="text-muted-foreground">{t("panelSubtitle")}</p>
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email
+                {t("emailLabel")}
               </label>
               <input
                 id="email"
@@ -77,7 +82,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Ingrese su email"
+                placeholder={t("emailPlaceholder")}
                 disabled={loading}
                 autoComplete="email"
               />
@@ -85,7 +90,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                Contraseña
+                {t("passwordLabel")}
               </label>
               <input
                 id="password"
@@ -93,7 +98,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="Ingrese su contraseña"
+                placeholder={t("passwordPlaceholder")}
                 disabled={loading}
                 autoComplete="current-password"
               />
@@ -104,7 +109,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {loading ? t("loggingIn") : t("login")}
             </button>
           </form>
 
@@ -114,14 +119,14 @@ export default function LoginPage() {
               href="/forgot-password"
               className="text-sm text-accent hover:underline"
             >
-              ¿Olvidaste tu contraseña?
+              {t("forgotLink")}
             </Link>
           </div>
 
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground">
-              Solo usuarios con rol de administrador pueden acceder
+              {t("adminOnlyNote")}
             </p>
           </div>
         </div>

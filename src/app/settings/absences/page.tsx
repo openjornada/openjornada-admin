@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import EnabledCompanySelect from "@/components/absences/EnabledCompanySelect";
 import { apiClient, AbsenceBlackoutPeriod, AbsenceType } from "@/lib/api-client";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineArrowLeft, AiOutlineSetting, AiOutlinePlus, AiOutlineDelete } from "react-icons/ai";
 
 interface PolicyFormState {
@@ -32,6 +34,7 @@ const emptyType = (): AbsenceType => ({
 });
 
 export default function AbsencePolicySettingsPage() {
+  const t = useTranslations("absencePolicy");
   const [companyId, setCompanyId] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,7 +64,7 @@ export default function AbsencePolicySettingsPage() {
       });
     } catch (error) {
       console.error("Error loading absence policy:", error);
-      toast.error("Error al cargar la política de ausencias");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
     }
@@ -106,11 +109,11 @@ export default function AbsencePolicySettingsPage() {
     if (!form || !companyId) return;
 
     if (form.absence_types.some((t) => !t.code.trim() || !t.name.trim())) {
-      toast.error("Todos los tipos de ausencia deben tener código y nombre");
+      toast.error(t("typesIncomplete"));
       return;
     }
     if (form.blackout_periods.some((b) => !b.name.trim() || !b.start_date || !b.end_date)) {
-      toast.error("Todos los periodos bloqueados deben tener nombre y fechas");
+      toast.error(t("blackoutsIncomplete"));
       return;
     }
 
@@ -138,11 +141,10 @@ export default function AbsencePolicySettingsPage() {
         blackout_periods: updated.blackout_periods,
         absence_types: updated.absence_types,
       });
-      toast.success("Política de ausencias guardada correctamente");
+      toast.success(t("saved"));
     } catch (error) {
       console.error("Error updating absence policy:", error);
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error al guardar la política";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("saveError")));
     } finally {
       setSaving(false);
     }
@@ -155,13 +157,13 @@ export default function AbsencePolicySettingsPage() {
         <div className="mb-6">
           <Link href="/absences" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a ausencias</span>
+            <span>{t("backToAbsences")}</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineSetting />
-            Política de Ausencias y Vacaciones
+            {t("title")}
           </h1>
-          <p className="text-muted-foreground">Configura los días de vacaciones, cómputo y catálogo de tipos por empresa</p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-4 mb-6 max-w-sm">
@@ -171,7 +173,7 @@ export default function AbsencePolicySettingsPage() {
         {loading && (
           <div className="bg-card border border-border rounded-lg p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando política...</p>
+            <p className="text-muted-foreground">{t("loading")}</p>
           </div>
         )}
 
@@ -179,10 +181,10 @@ export default function AbsencePolicySettingsPage() {
           <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
             {/* General policy */}
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Configuración General</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("general")}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Días de vacaciones al año</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t("annualDays")}</label>
                   <input
                     type="number"
                     min={0}
@@ -196,7 +198,7 @@ export default function AbsencePolicySettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Antelación mínima (días)</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t("minAdvance")}</label>
                   <input
                     type="number"
                     min={0}
@@ -208,32 +210,32 @@ export default function AbsencePolicySettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Modo de cómputo</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t("computation")}</label>
                   <select
                     value={form.computation}
                     onChange={(e) => updateForm("computation", e.target.value as "business_days" | "calendar_days")}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   >
-                    <option value="business_days">Días laborables</option>
-                    <option value="calendar_days">Días naturales</option>
+                    <option value="business_days">{t("computationBusiness")}</option>
+                    <option value="calendar_days">{t("computationCalendar")}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Año de referencia</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t("referenceYear")}</label>
                   <select
                     value={form.reference_year}
                     onChange={(e) => updateForm("reference_year", e.target.value as "calendar" | "hire_date")}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   >
-                    <option value="calendar">Año natural</option>
-                    <option value="hire_date">Fecha de alta</option>
+                    <option value="calendar">{t("referenceCalendar")}</option>
+                    <option value="hire_date">{t("referenceHire")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Máximo de personas solapadas
+                    {t("maxOverlap")}
                   </label>
                   <input
                     type="number"
@@ -242,10 +244,10 @@ export default function AbsencePolicySettingsPage() {
                     onChange={(e) =>
                       updateForm("max_overlap_per_company", e.target.value === "" ? "" : Number(e.target.value))
                     }
-                    placeholder="Sin límite"
+                    placeholder={t("maxDaysPlaceholder")}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Vacío = sin límite</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("maxOverlapHelp")}</p>
                 </div>
               </div>
 
@@ -257,7 +259,7 @@ export default function AbsencePolicySettingsPage() {
                     onChange={(e) => updateForm("allow_half_day", e.target.checked)}
                     className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
                   />
-                  <span className="text-sm font-medium text-foreground">Permitir medio día</span>
+                  <span className="text-sm font-medium text-foreground">{t("allowHalfDay")}</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -266,7 +268,7 @@ export default function AbsencePolicySettingsPage() {
                     onChange={(e) => updateForm("allow_hourly", e.target.checked)}
                     className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
                   />
-                  <span className="text-sm font-medium text-foreground">Permitir solicitud por horas</span>
+                  <span className="text-sm font-medium text-foreground">{t("allowHourly")}</span>
                 </label>
               </div>
             </div>
@@ -274,35 +276,35 @@ export default function AbsencePolicySettingsPage() {
             {/* Blackout periods */}
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-foreground">Periodos Bloqueados (Blackout)</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t("blackouts")}</h2>
                 <button
                   type="button"
                   onClick={addBlackout}
                   className="flex items-center gap-2 text-accent hover:underline text-sm font-medium"
                 >
                   <AiOutlinePlus />
-                  Añadir periodo
+                  {t("addBlackout")}
                 </button>
               </div>
 
               {form.blackout_periods.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay periodos bloqueados configurados.</p>
+                <p className="text-sm text-muted-foreground">{t("noBlackouts")}</p>
               ) : (
                 <div className="space-y-3">
                   {form.blackout_periods.map((b, index) => (
                     <div key={index} className="flex flex-wrap items-end gap-3 bg-muted/30 rounded-lg p-3">
                       <div className="flex-1 min-w-[160px]">
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Nombre</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">{t("typeName")}</label>
                         <input
                           type="text"
                           value={b.name}
                           onChange={(e) => updateBlackout(index, "name", e.target.value)}
                           className="w-full px-3 py-1.5 border border-input bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                          placeholder="Ej: Campaña de Navidad"
+                          placeholder={t("blackoutNamePlaceholder")}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Inicio</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">{t("blackoutStart")}</label>
                         <input
                           type="date"
                           value={b.start_date}
@@ -311,7 +313,7 @@ export default function AbsencePolicySettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Fin</label>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">{t("blackoutEnd")}</label>
                         <input
                           type="date"
                           value={b.end_date}
@@ -323,7 +325,7 @@ export default function AbsencePolicySettingsPage() {
                         type="button"
                         onClick={() => removeBlackout(index)}
                         className="text-destructive hover:text-destructive/80 p-2"
-                        title="Eliminar"
+                        title={t("delete")}
                       >
                         <AiOutlineDelete className="text-lg" />
                       </button>
@@ -336,40 +338,40 @@ export default function AbsencePolicySettingsPage() {
             {/* Absence types catalogue */}
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-foreground">Catálogo de Tipos de Ausencia</h2>
+                <h2 className="text-xl font-semibold text-foreground">{t("types")}</h2>
                 <button
                   type="button"
                   onClick={addType}
                   className="flex items-center gap-2 text-accent hover:underline text-sm font-medium"
                 >
                   <AiOutlinePlus />
-                  Añadir tipo
+                  {t("addType")}
                 </button>
               </div>
 
               <div className="space-y-4">
-                {form.absence_types.map((t, index) => (
+                {form.absence_types.map((at, index) => (
                   <div key={index} className="bg-muted/30 rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
                         <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Código</label>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">{t("typeCode")}</label>
                           <input
                             type="text"
-                            value={t.code}
+                            value={at.code}
                             onChange={(e) => updateType(index, "code", e.target.value)}
                             className="w-full px-3 py-1.5 border border-input bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                             placeholder="vacation"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Nombre</label>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">{t("typeName")}</label>
                           <input
                             type="text"
-                            value={t.name}
+                            value={at.name}
                             onChange={(e) => updateType(index, "name", e.target.value)}
                             className="w-full px-3 py-1.5 border border-input bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                            placeholder="Vacaciones"
+                            placeholder={t("typeNamePlaceholder")}
                           />
                         </div>
                       </div>
@@ -377,7 +379,7 @@ export default function AbsencePolicySettingsPage() {
                         type="button"
                         onClick={() => removeType(index)}
                         className="text-destructive hover:text-destructive/80 p-2"
-                        title="Eliminar tipo"
+                        title={t("deleteType")}
                       >
                         <AiOutlineDelete className="text-lg" />
                       </button>
@@ -387,48 +389,48 @@ export default function AbsencePolicySettingsPage() {
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={t.deducts_balance}
+                          checked={at.deducts_balance}
                           onChange={(e) => updateType(index, "deducts_balance", e.target.checked)}
                           className="w-4 h-4 rounded border-input text-accent focus:ring-accent"
                         />
-                        <span className="text-sm text-foreground">Descuenta saldo</span>
+                        <span className="text-sm text-foreground">{t("deductsBalance")}</span>
                       </label>
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={t.is_paid}
+                          checked={at.is_paid}
                           onChange={(e) => updateType(index, "is_paid", e.target.checked)}
                           className="w-4 h-4 rounded border-input text-accent focus:ring-accent"
                         />
-                        <span className="text-sm text-foreground">Remunerado</span>
+                        <span className="text-sm text-foreground">{t("isPaid")}</span>
                       </label>
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={t.requires_attachment}
+                          checked={at.requires_attachment}
                           onChange={(e) => updateType(index, "requires_attachment", e.target.checked)}
                           className="w-4 h-4 rounded border-input text-accent focus:ring-accent"
                         />
-                        <span className="text-sm text-foreground">Requiere justificante</span>
+                        <span className="text-sm text-foreground">{t("requiresAttachment")}</span>
                       </label>
 
                       <div className="flex items-center gap-2">
-                        <label className="text-sm text-foreground">Límite de días</label>
+                        <label className="text-sm text-foreground">{t("maxDays")}</label>
                         <input
                           type="number"
                           min={0}
-                          value={t.max_days ?? ""}
+                          value={at.max_days ?? ""}
                           onChange={(e) => updateType(index, "max_days", e.target.value === "" ? null : Number(e.target.value))}
-                          placeholder="Sin límite"
+                          placeholder={t("maxDaysPlaceholder")}
                           className="w-28 px-2 py-1 border border-input bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                         />
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <label className="text-sm text-foreground">Color</label>
+                        <label className="text-sm text-foreground">{t("color")}</label>
                         <input
                           type="color"
-                          value={t.color}
+                          value={at.color}
                           onChange={(e) => updateType(index, "color", e.target.value)}
                           className="w-10 h-8 border border-input rounded cursor-pointer"
                         />
@@ -445,7 +447,7 @@ export default function AbsencePolicySettingsPage() {
                 disabled={saving}
                 className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Guardando..." : "Guardar Política"}
+                {saving ? t("saving") : t("save")}
               </button>
             </div>
           </form>

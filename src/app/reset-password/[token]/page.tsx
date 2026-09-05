@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { appConfig } from "@/lib/config";
+import { getApiErrorMessage } from "@/lib/error-messages";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
@@ -17,6 +19,7 @@ interface ResetPasswordPageProps {
 }
 
 export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
+  const t = useTranslations("auth.reset");
   const { token } = use(params);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,10 +42,10 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
 
   const validatePassword = (password: string): string | null => {
     if (!password) {
-      return "La contraseña es requerida";
+      return t("passwordRequired");
     }
     if (password.length < 6) {
-      return "La contraseña debe tener al menos 6 caracteres";
+      return t("passwordTooShort");
     }
     return null;
   };
@@ -59,7 +62,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("Las contraseñas no coinciden");
+      setErrorMessage(t("passwordsDontMatch"));
       return;
     }
 
@@ -70,21 +73,32 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
       setState("success");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Contraseña restablecida exitosamente");
+      toast.success(t("successBody"));
     } catch (error: unknown) {
       console.error("Reset password error:", error);
       setState("error");
 
-      const err = error as { response?: { data?: { detail?: string } }; message?: string };
-      const errorMsg = err.response?.data?.detail || err.message;
+      // Prefer the stable error_code catalog; fall back to legacy text
+      // sniffing (endpoints not yet migrated) and finally a generic message.
+      const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail;
+      const code =
+        detail && typeof detail === "object" && !Array.isArray(detail)
+          ? (detail as { error_code?: string }).error_code
+          : undefined;
+      const legacyText =
+        typeof detail === "string" ? detail : (detail as { message?: string })?.message ?? "";
 
       let message: string;
-      if (errorMsg?.includes("expired") || errorMsg?.includes("expirado")) {
-        message = "El enlace de recuperación ha expirado. Por favor solicita uno nuevo.";
-      } else if (errorMsg?.includes("invalid") || errorMsg?.includes("inválido")) {
-        message = "El enlace de recuperación es inválido. Por favor solicita uno nuevo.";
+      if (code === "auth.expired_reset_token") {
+        message = t("errorExpired");
+      } else if (code === "auth.invalid_reset_token") {
+        message = t("errorInvalid");
+      } else if (legacyText.includes("expired") || legacyText.includes("expirado")) {
+        message = t("errorExpired");
+      } else if (legacyText.includes("invalid") || legacyText.includes("inválido")) {
+        message = t("errorInvalid");
       } else {
-        message = "Error al restablecer la contraseña. Por favor intenta de nuevo.";
+        message = getApiErrorMessage(error, t("errorGeneric"));
       }
 
       setErrorMessage(message);
@@ -109,12 +123,8 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                 />
               </div>
             )}
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Nueva Contraseña
-            </h1>
-            <p className="text-muted-foreground">
-              Ingresa tu nueva contraseña
-            </p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{t("title")}</h1>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
 
           {state === "success" ? (
@@ -133,14 +143,10 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                     />
                   </svg>
                   <div>
-                    <h3 className="text-sm font-medium text-green-800">
-                      Contraseña restablecida
-                    </h3>
-                    <p className="text-sm text-green-700 mt-1">
-                      Tu contraseña ha sido restablecida exitosamente.
-                    </p>
+                    <h3 className="text-sm font-medium text-green-800">{t("successTitle")}</h3>
+                    <p className="text-sm text-green-700 mt-1">{t("successBody")}</p>
                     <p className="text-sm text-green-700 mt-2">
-                      Redirigiendo al inicio de sesión en {countdown} segundo{countdown !== 1 ? 's' : ''}...
+                      {t("redirecting", { count: countdown })}
                     </p>
                   </div>
                 </div>
@@ -150,7 +156,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                 href="/login"
                 className="block w-full text-center bg-accent text-accent-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Ir al inicio de sesión
+                {t("goLogin")}
               </Link>
             </div>
           ) : (
@@ -160,7 +166,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   htmlFor="newPassword"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Nueva Contraseña
+                  {t("newPasswordLabel")}
                 </label>
                 <input
                   id="newPassword"
@@ -168,15 +174,13 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="Ingrese su nueva contraseña"
+                  placeholder={t("newPasswordPlaceholder")}
                   disabled={state === "loading"}
                   autoComplete="new-password"
                   autoFocus
                   minLength={6}
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Mínimo 6 caracteres
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("minChars")}</p>
               </div>
 
               <div>
@@ -184,7 +188,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   htmlFor="confirmPassword"
                   className="block text-sm font-medium text-foreground mb-2"
                 >
-                  Confirmar Contraseña
+                  {t("confirmLabel")}
                 </label>
                 <input
                   id="confirmPassword"
@@ -192,7 +196,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="Confirme su nueva contraseña"
+                  placeholder={t("confirmPlaceholder")}
                   disabled={state === "loading"}
                   autoComplete="new-password"
                   minLength={6}
@@ -248,10 +252,10 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Cambiando contraseña...
+                    {t("submitting")}
                   </span>
                 ) : (
-                  "Cambiar contraseña"
+                  t("submit")
                 )}
               </button>
 
@@ -260,7 +264,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
                   href="/login"
                   className="text-sm text-accent hover:underline"
                 >
-                  Volver al inicio de sesión
+                  {t("goLogin")}
                 </Link>
               </div>
             </form>
@@ -269,7 +273,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground">
-              Panel de administración de {appConfig.appName}
+              {t("panelFooter", { appName: appConfig.appName })}
             </p>
           </div>
         </div>

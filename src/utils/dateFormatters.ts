@@ -5,7 +5,12 @@
  * - Backend siempre guarda en UTC (ISO 8601 con "Z")
  * - Frontend convierte a zona horaria local del navegador
  * - toLocaleString() aplica automáticamente timezone del navegador
+ * - El idioma de formato sigue el locale de UI activo (i18n); ver
+ *   src/i18n/active-locale.ts (por defecto "es" → es-ES, comportamiento
+ *   idéntico al histórico).
  */
+
+import { activeIntlLocale } from "@/i18n/active-locale";
 
 /**
  * Formatea una fecha UTC a la zona horaria del navegador
@@ -35,8 +40,20 @@ export const formatToLocalTime = (
     ...options,
   };
 
-  return date.toLocaleString('es-ES', defaultOptions);
+  return date.toLocaleString(activeIntlLocale(), defaultOptions);
 };
+
+/**
+ * Formatea una fecha con día/mes/año y hora:minuto en el locale de UI activo.
+ */
+export const formatDateTimeLocale = (dateString: string): string =>
+  new Date(dateString).toLocaleString(activeIntlLocale(), {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 /**
  * Formatea una fecha UTC solo con hora:minuto
@@ -52,7 +69,7 @@ export const formatToLocalTimeShort = (
 
   const date = new Date(utcDateStr);
 
-  return date.toLocaleString('es-ES', {
+  return date.toLocaleString(activeIntlLocale(), {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -138,15 +155,14 @@ export const getBrowserTimezone = (): string => {
 };
 
 /**
- * Nombre del mes en español
+ * Nombre del mes en el idioma de UI activo (capitalizado).
  */
-const MONTH_NAMES_ES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
-
 export const getMonthName = (month: number): string => {
-  return MONTH_NAMES_ES[month - 1] || "";
+  if (month < 1 || month > 12) return "";
+  const name = new Intl.DateTimeFormat(activeIntlLocale(), { month: "long" }).format(
+    new Date(2024, month - 1, 1)
+  );
+  return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
 /**

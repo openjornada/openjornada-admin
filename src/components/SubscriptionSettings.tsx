@@ -1,27 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { AiOutlineCreditCard } from "react-icons/ai";
 import { apiClient } from "@/lib/api-client";
 import type { SubscriptionStatus } from "@/lib/api-client";
 import { formatToLocalTime } from "@/utils/dateFormatters";
 import toast from "react-hot-toast";
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  active: { label: "Al día", className: "text-green-600 dark:text-green-400" },
-  trialing: { label: "Al día", className: "text-green-600 dark:text-green-400" },
-  past_due: { label: "Pago pendiente", className: "text-yellow-600 dark:text-yellow-400" },
-  canceled: { label: "Caducada", className: "text-red-600 dark:text-red-400" },
-  unpaid: { label: "Caducada", className: "text-red-600 dark:text-red-400" },
-  incomplete_expired: { label: "Caducada", className: "text-red-600 dark:text-red-400" },
+const STATUS_LABEL_KEYS: Record<string, { key: "statusUpToDate" | "statusPastDue" | "statusExpired"; className: string }> = {
+  active: { key: "statusUpToDate", className: "text-green-600 dark:text-green-400" },
+  trialing: { key: "statusUpToDate", className: "text-green-600 dark:text-green-400" },
+  past_due: { key: "statusPastDue", className: "text-yellow-600 dark:text-yellow-400" },
+  canceled: { key: "statusExpired", className: "text-red-600 dark:text-red-400" },
+  unpaid: { key: "statusExpired", className: "text-red-600 dark:text-red-400" },
+  incomplete_expired: { key: "statusExpired", className: "text-red-600 dark:text-red-400" },
 };
 
-const MODE_LABELS: Record<string, string> = {
-  live: "Producción",
-  demo: "Demo",
+const MODE_LABEL_KEYS: Record<string, "modeLive" | "modeDemo"> = {
+  live: "modeLive",
+  demo: "modeDemo",
 };
 
 export default function SubscriptionSettings() {
+  const t = useTranslations("subscription");
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [openingPortal, setOpeningPortal] = useState(false);
@@ -49,7 +51,7 @@ export default function SubscriptionSettings() {
       window.open(url, "_blank");
     } catch (error) {
       console.error("Error opening subscription portal:", error);
-      toast.error("Error al abrir la gestión de la suscripción");
+      toast.error(t("portalError"));
     } finally {
       setOpeningPortal(false);
     }
@@ -59,26 +61,26 @@ export default function SubscriptionSettings() {
     return null;
   }
 
-  const statusInfo = status.status ? STATUS_LABELS[status.status] : undefined;
+  const statusInfo = status.status ? STATUS_LABEL_KEYS[status.status] : undefined;
 
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
         <AiOutlineCreditCard className="text-accent" />
-        Suscripción
+        {t("title")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
-          <p className="text-sm text-muted-foreground">Estado</p>
+          <p className="text-sm text-muted-foreground">{t("status")}</p>
           <p className={`text-base font-medium ${statusInfo?.className || "text-foreground"}`}>
-            {statusInfo?.label || status.status || "-"}
+            {statusInfo ? t(statusInfo.key) : status.status || "-"}
           </p>
         </div>
 
         {status.current_period_end && (
           <div>
-            <p className="text-sm text-muted-foreground">Fecha de renovación</p>
+            <p className="text-sm text-muted-foreground">{t("renewalDate")}</p>
             <p className="text-base font-medium text-foreground">
               {formatToLocalTime(status.current_period_end, {
                 year: "numeric",
@@ -93,15 +95,15 @@ export default function SubscriptionSettings() {
 
         {typeof status.days_remaining === "number" && (
           <div>
-            <p className="text-sm text-muted-foreground">Días restantes</p>
+            <p className="text-sm text-muted-foreground">{t("daysRemaining")}</p>
             <p className="text-base font-medium text-foreground">{status.days_remaining}</p>
           </div>
         )}
 
         {status.mode && (
           <div>
-            <p className="text-sm text-muted-foreground">Modo</p>
-            <p className="text-base font-medium text-foreground">{MODE_LABELS[status.mode] || status.mode}</p>
+            <p className="text-sm text-muted-foreground">{t("mode")}</p>
+            <p className="text-base font-medium text-foreground">{MODE_LABEL_KEYS[status.mode] ? t(MODE_LABEL_KEYS[status.mode]) : status.mode}</p>
           </div>
         )}
       </div>
@@ -111,7 +113,7 @@ export default function SubscriptionSettings() {
         disabled={openingPortal}
         className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {openingPortal ? "Abriendo..." : "Gestionar en Stripe"}
+        {openingPortal ? t("opening") : t("manageStripe")}
       </button>
     </div>
   );

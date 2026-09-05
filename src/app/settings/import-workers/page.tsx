@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import Papa from "papaparse";
@@ -12,6 +13,7 @@ import type {
 } from "@/lib/api-client";
 import { appConfig } from "@/lib/config";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import {
   AiOutlineArrowLeft,
   AiOutlineUpload,
@@ -31,17 +33,6 @@ const STATUS_STYLES: Record<WorkerImportRowResult["status"], string> = {
   error: "bg-red-100 text-red-800 border-red-200",
 };
 
-const statusLabel = (status: WorkerImportRowResult["status"], dryRun: boolean): string => {
-  switch (status) {
-    case "created":
-      return dryRun ? "Se crearía" : "Creado";
-    case "skipped_duplicate":
-      return dryRun ? "Duplicado (se omitiría)" : "Duplicado (omitido)";
-    case "error":
-      return "Error";
-  }
-};
-
 const parseColumns = (row: CsvRow): string[] =>
   (row.empresas ?? "").split("|").map((c) => c.trim()).filter(Boolean);
 
@@ -57,6 +48,9 @@ const toImportRows = (csvRows: CsvRow[]): WorkerImportRow[] =>
   }));
 
 export default function ImportWorkersPage() {
+  const t = useTranslations("importWorkers");
+  const ts = useTranslations("importWorkers.status");
+  const tc = useTranslations("common");
   const [fileName, setFileName] = useState("");
   const [csvRows, setCsvRows] = useState<CsvRow[]>([]);
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
@@ -64,6 +58,17 @@ export default function ImportWorkersPage() {
   const [finalResult, setFinalResult] = useState<WorkerBulkImportResponse | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  const statusLabel = (status: WorkerImportRowResult["status"], dryRun: boolean): string => {
+    switch (status) {
+      case "created":
+        return dryRun ? ts("wouldCreate") : ts("created");
+      case "skipped_duplicate":
+        return dryRun ? ts("duplicateWouldSkip") : ts("duplicateSkipped");
+      case "error":
+        return ts("error");
+    }
+  };
 
   const resetAll = () => {
     setFileName("");
@@ -86,19 +91,15 @@ export default function ImportWorkersPage() {
         const fields = result.meta.fields ?? [];
         const missing = REQUIRED_COLUMNS.filter((col) => !fields.includes(col));
         if (missing.length > 0) {
-          toast.error(
-            `El CSV no tiene las columnas obligatorias: ${missing.join(", ")}. Descarga la plantilla y revisa la cabecera.`
-          );
+          toast.error(t("missingColumns", { columns: missing.join(", ") }));
           return;
         }
         if (result.data.length === 0) {
-          toast.error("El CSV no contiene ninguna fila de trabajadores");
+          toast.error(t("emptyCsv"));
           return;
         }
         if (result.data.length > MAX_ROWS) {
-          toast.error(
-            `El CSV tiene ${result.data.length} filas y el máximo por importación es ${MAX_ROWS}. Divide el archivo en varios CSV más pequeños.`
-          );
+          toast.error(t("tooManyRows", { count: result.data.length, max: MAX_ROWS }));
           return;
         }
         setFileName(file.name);
@@ -107,13 +108,10 @@ export default function ImportWorkersPage() {
         setFinalResult(null);
       },
       error: () => {
-        toast.error("No se pudo leer el archivo CSV. Comprueba que el formato es correcto.");
+        toast.error(t("parseError"));
       },
     });
   };
-
-  const apiError = (error: unknown, fallback: string): string =>
-    (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || fallback;
 
   const runDryPreview = async (): Promise<WorkerBulkImportResponse | null> => {
     try {
@@ -124,7 +122,7 @@ export default function ImportWorkersPage() {
       });
     } catch (error) {
       console.error("Error en previsualización de importación:", error);
-      toast.error(apiError(error, "Error al comprobar el CSV contra el servidor"));
+      toast.error(getApiErrorMessage(error, t("previewError")));
       return null;
     }
   };
@@ -148,10 +146,10 @@ export default function ImportWorkersPage() {
         send_welcome_email: sendWelcomeEmail,
       });
       setFinalResult(response);
-      toast.success("Importación finalizada");
+      toast.success(t("imported"));
     } catch (error) {
       console.error("Error en importación:", error);
-      toast.error(apiError(error, "Error al importar los trabajadores"));
+      toast.error(getApiErrorMessage(error, t("importError")));
     } finally {
       setImporting(false);
     }
@@ -167,8 +165,8 @@ export default function ImportWorkersPage() {
       const original = csvRows[r.row_index] ?? {};
       return {
         ...Object.fromEntries(CSV_COLUMNS.map((col) => [col, original[col] ?? ""])),
-        estado: statusLabel(r.status, false),
-        motivo: r.detail ?? "",
+        [t("errorReportEstado")]: statusLabel(r.status, false),
+        [t("errorReportMotivo")]: r.detail ?? "",
       };
     });
     const csv = "\uFEFF" + Papa.unparse(report); // BOM para que Excel lea los acentos correctamente
@@ -176,7 +174,7 @@ export default function ImportWorkersPage() {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "informe-errores-importacion.csv";
+    link.download = t("errorReportFile");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -193,14 +191,14 @@ export default function ImportWorkersPage() {
         <div className="mb-6">
           <Link href="/settings" className="inline-flex items-center gap-2 text-accent hover:underline mb-4">
             <AiOutlineArrowLeft />
-            <span>Volver a configuración</span>
+            <span>{t("backToSettings")}</span>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <AiOutlineUpload />
-            Importar trabajadores (CSV)
+            {t("title")}
           </h1>
           <p className="text-muted-foreground">
-            Carga varios trabajadores a la vez desde un archivo CSV
+            {t("subtitle")}
           </p>
         </div>
 
@@ -210,12 +208,10 @@ export default function ImportWorkersPage() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                 <AiOutlineFileText className="text-accent" />
-                1. Prepara el archivo CSV
+                {t("step1")}
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Descarga la plantilla, rellena una fila por trabajador y súbela aquí. El máximo
-                por importación es de {MAX_ROWS} filas: si tienes más trabajadores, divide el
-                archivo en varios CSV e impórtalos por separado.
+                {t("step1Help", { max: MAX_ROWS })}
               </p>
               <a
                 href={`${appConfig.basePath}/plantilla-trabajadores.csv`}
@@ -223,58 +219,57 @@ export default function ImportWorkersPage() {
                 className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity mb-6"
               >
                 <AiOutlineDownload />
-                <span>Descargar plantilla</span>
+                <span>{t("downloadTemplate")}</span>
               </a>
 
               <div className="overflow-x-auto border border-border rounded-lg">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">Columna</th>
-                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">Descripción</th>
-                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">Obligatoria</th>
+                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t("colColumn")}</th>
+                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t("colDescription")}</th>
+                      <th className="px-4 py-2 text-left font-medium text-muted-foreground">{t("colRequired")}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-card divide-y divide-border">
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">first_name</td>
-                      <td className="px-4 py-2 text-muted-foreground">Nombre</td>
-                      <td className="px-4 py-2 text-muted-foreground">Sí</td>
+                      <td className="px-4 py-2 text-muted-foreground">{t("columns.firstName")}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("yes")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">last_name</td>
-                      <td className="px-4 py-2 text-muted-foreground">Apellidos</td>
-                      <td className="px-4 py-2 text-muted-foreground">Sí</td>
+                      <td className="px-4 py-2 text-muted-foreground">{t("columns.lastName")}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("yes")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">email</td>
-                      <td className="px-4 py-2 text-muted-foreground">Email (servirá de identificador de acceso)</td>
-                      <td className="px-4 py-2 text-muted-foreground">Sí</td>
+                      <td className="px-4 py-2 text-muted-foreground">{t("columns.email")}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("yes")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">phone_number</td>
-                      <td className="px-4 py-2 text-muted-foreground">Teléfono (p. ej. +34600112233)</td>
-                      <td className="px-4 py-2 text-muted-foreground">No</td>
+                      <td className="px-4 py-2 text-muted-foreground">{t("columns.phone")}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("no")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">id_number</td>
-                      <td className="px-4 py-2 text-muted-foreground">DNI/NIE</td>
-                      <td className="px-4 py-2 text-muted-foreground">Sí</td>
+                      <td className="px-4 py-2 text-muted-foreground">{t("columns.idNumber")}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("yes")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">empresas</td>
                       <td className="px-4 py-2 text-muted-foreground">
-                        Nombres de empresa; si son varias, sepáralos con | (p. ej.{" "}
-                        <span className="font-mono">&quot;Empresa 1 S.L.|Empresa 2 S.L.&quot;</span>)
+                        {t("columns.companies")}
                       </td>
-                      <td className="px-4 py-2 text-muted-foreground">Sí</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("yes")}</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2 font-mono text-foreground">default_timezone</td>
                       <td className="px-4 py-2 text-muted-foreground">
-                        Zona horaria (p. ej. Europe/Madrid). Vacío = UTC
+                        {t("columns.timezone")}
                       </td>
-                      <td className="px-4 py-2 text-muted-foreground">No</td>
+                      <td className="px-4 py-2 text-muted-foreground">{tc("no")}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -285,7 +280,7 @@ export default function ImportWorkersPage() {
           {/* Step 2: Upload */}
           {!shown && (
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-4">2. Sube el CSV</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">{t("step2")}</h2>
               <div className="flex flex-wrap items-center gap-6">
                 <input
                   type="file"
@@ -295,8 +290,7 @@ export default function ImportWorkersPage() {
                 />
                 {csvRows.length > 0 && (
                   <span className="text-sm text-foreground">
-                    {fileName}: {csvRows.length} fila{csvRows.length === 1 ? "" : "s"} leída
-                    {csvRows.length === 1 ? "" : "s"}
+                    {t("rowsRead", { file: fileName, count: csvRows.length })}
                   </span>
                 )}
               </div>
@@ -307,12 +301,10 @@ export default function ImportWorkersPage() {
                   onChange={(e) => setSendWelcomeEmail(e.target.checked)}
                   className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
                 />
-                <span className="text-sm font-medium text-foreground">Enviar email de bienvenida</span>
+                <span className="text-sm font-medium text-foreground">{t("sendWelcome")}</span>
               </label>
               <p className="text-xs text-muted-foreground mt-1 ml-7 max-w-xl">
-                Los trabajadores reciben un email con un enlace para establecer su propia contraseña.
-                El CSV no incluye contraseñas por seguridad: se genera una provisional aleatoria y el
-                enlace de bienvenida permite cambiarla en el primer acceso.
+                {t("welcomeHelp")}
               </p>
               <div className="mt-6">
                 <button
@@ -321,11 +313,11 @@ export default function ImportWorkersPage() {
                   disabled={csvRows.length === 0 || previewing}
                   className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {previewing ? "Comprobando..." : "Previsualizar (comprobar)"}
+                  {previewing ? t("previewing") : t("previewBtn")}
                 </button>
                 {csvRows.length === 0 && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Selecciona primero un archivo CSV válido.
+                    {t("selectFileHint")}
                   </p>
                 )}
               </div>
@@ -337,28 +329,28 @@ export default function ImportWorkersPage() {
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
                 <h2 className="text-xl font-semibold text-foreground">
-                  {finalResult ? "Resultado de la importación" : "Vista previa (sin cambios)"}
+                  {finalResult ? t("resultTitle") : t("previewTitle")}
                 </h2>
                 <span className="text-sm text-muted-foreground">{fileName}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-muted/30 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-foreground">{shown.total}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{t("statTotal")}</p>
                 </div>
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-green-800 dark:text-green-200">{shown.created}</p>
                   <p className="text-xs text-green-700 dark:text-green-300 uppercase tracking-wider">
-                    {isDryRun ? "Se crearían" : "Creados"}
+                    {isDryRun ? t("statWouldCreate") : t("statCreated")}
                   </p>
                 </div>
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-amber-800 dark:text-amber-200">{shown.skipped}</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 uppercase tracking-wider">Omitidos</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 uppercase tracking-wider">{t("statSkipped")}</p>
                 </div>
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-red-800 dark:text-red-200">{shown.errors}</p>
-                  <p className="text-xs text-red-700 dark:text-red-300 uppercase tracking-wider">Errores</p>
+                  <p className="text-xs text-red-700 dark:text-red-300 uppercase tracking-wider">{t("statErrors")}</p>
                 </div>
               </div>
 
@@ -372,14 +364,14 @@ export default function ImportWorkersPage() {
                       disabled={shown.created === 0 || importing}
                       className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {importing ? "Importando..." : "Importar"}
+                      {importing ? t("importing") : t("importBtn")}
                     </button>
                     <button
                       type="button"
                       onClick={resetAll}
                       className="bg-secondary text-secondary-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity"
                     >
-                      Cancelar
+                      {tc("cancel")}
                     </button>
                   </>
                 ) : (
@@ -391,7 +383,7 @@ export default function ImportWorkersPage() {
                         className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity"
                       >
                         <AiOutlineDownload />
-                        <span>Descargar informe de errores</span>
+                        <span>{t("downloadErrorReport")}</span>
                       </button>
                     )}
                     <button
@@ -411,21 +403,21 @@ export default function ImportWorkersPage() {
                       disabled={importing}
                       className="bg-accent text-accent-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Volver a comprobar
+                      {t("recheck")}
                     </button>
                     <button
                       type="button"
                       onClick={resetAll}
                       className="bg-secondary text-secondary-foreground py-2 px-6 rounded-lg font-medium hover:opacity-90 transition-opacity"
                     >
-                      Nueva importación
+                      {t("newImport")}
                     </button>
                   </>
                 )}
               </div>
               {!finalResult && shown.created === 0 && (
                 <p className="text-sm text-muted-foreground mt-3">
-                  No hay filas que se vayan a crear: corrige el CSV y vuelve a comprobar.
+                  {t("nothingToCreate")}
                 </p>
               )}
             </div>
@@ -439,13 +431,13 @@ export default function ImportWorkersPage() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">DNI/NIE</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresas</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Zona horaria</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Detalle</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.name")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.email")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.dni")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.companies")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.timezone")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.status")}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tableCols.detail")}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-card divide-y divide-border">

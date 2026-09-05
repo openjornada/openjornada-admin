@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import {
@@ -29,6 +30,7 @@ import {
 import toast from "react-hot-toast";
 
 export default function WorkerReportsPage() {
+  const t = useTranslations("reports");
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [report, setReport] = useState<
@@ -46,8 +48,9 @@ export default function WorkerReportsPage() {
 
   useEffect(() => {
     apiClient.getCompanies().then(setCompanies).catch(() => {
-      toast.error("No se pudieron cargar las empresas");
+      toast.error(t("loadCompaniesError"));
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilter = async (f: {
@@ -77,9 +80,7 @@ export default function WorkerReportsPage() {
         setReport(data);
       }
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Error al generar el informe";
-      toast.error(message);
+      toast.error(error instanceof Error ? error.message : t("generateError"));
     } finally {
       setLoading(false);
     }
@@ -94,9 +95,9 @@ export default function WorkerReportsPage() {
         worker_id: selectedWorkerId || undefined,
         format,
       });
-      toast.success(`Informe exportado como ${format.toUpperCase()}`);
+      toast.success(t("exportedAs", { format: format.toUpperCase() }));
     } catch {
-      toast.error("Error al exportar el informe");
+      toast.error(t("exportError"));
     } finally {
       setExporting(false);
     }
@@ -121,15 +122,15 @@ export default function WorkerReportsPage() {
             href="/reports"
             className="text-accent hover:underline text-sm flex items-center gap-1 mb-3"
           >
-            <AiOutlineArrowLeft /> Volver a Informes
+            <AiOutlineArrowLeft /> {t("backToReportsCapital")}
           </Link>
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                Informe por Trabajador
+                {t("workerReportTitle")}
               </h1>
               <p className="text-muted-foreground">
-                Resumen mensual detallado con desglose diario
+                {t("workerReportPageSubtitle")}
               </p>
             </div>
             <button
@@ -137,7 +138,7 @@ export default function WorkerReportsPage() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors shrink-0"
             >
               <AiOutlineDownload className="text-base" />
-              Exportar informe de jornada
+              {t("exportReport")}
             </button>
           </div>
         </div>
@@ -173,22 +174,22 @@ export default function WorkerReportsPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <StatCard
-                title="Días Trabajados"
+                title={t("statDaysWorked")}
                 value={report.total_days_worked}
                 icon={<AiOutlineCalendar className="text-xl text-accent" />}
               />
               <StatCard
-                title="Horas Trabajadas"
+                title={t("statWorkedHours")}
                 value={formatMinutesToHoursMinutes(report.total_worked_minutes)}
                 icon={<AiOutlineClockCircle className="text-xl text-accent" />}
               />
               <StatCard
-                title="Tiempo de Pausas"
+                title={t("statPauseTime2")}
                 value={formatMinutesToHoursMinutes(report.total_pause_minutes)}
                 icon={<AiOutlinePause className="text-xl text-accent" />}
               />
               <StatCard
-                title="Horas Extra"
+                title={t("statOvertime")}
                 value={formatMinutesToHoursMinutes(report.total_overtime_minutes)}
                 variant={report.total_overtime_minutes > 0 ? "warning" : "default"}
                 icon={<AiOutlineWarning className="text-xl" />}
@@ -201,22 +202,22 @@ export default function WorkerReportsPage() {
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Fecha
+                      {t("colDate")}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Entrada
+                      {t("colEntry")}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Salida
+                      {t("colExit")}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Trabajado
+                      {t("colWorked")}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Pausas
+                      {t("colPauses")}
                     </th>
                     <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                      Estado
+                      {t("colStatus")}
                     </th>
                   </tr>
                 </thead>
@@ -248,15 +249,15 @@ export default function WorkerReportsPage() {
                       <td className="px-4 py-3 text-sm">
                         {day.has_open_session ? (
                           <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full">
-                            Sesión abierta
+                            {t("sessionOpen")}
                           </span>
                         ) : day.is_modified ? (
                           <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
-                            Modificado
+                            {t("modified")}
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
-                            Completo
+                            {t("complete")}
                           </span>
                         )}
                       </td>
@@ -266,7 +267,7 @@ export default function WorkerReportsPage() {
               </table>
               {report.daily_details.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">
-                  No hay registros para este periodo
+                  {t("noRecords")}
                 </p>
               )}
             </div>
@@ -275,7 +276,7 @@ export default function WorkerReportsPage() {
             <div className="mt-4 bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Estado de firma:
+                  {t("signatureStatus")}
                 </span>
                 <span
                   className={`px-3 py-1 text-sm rounded-full ${
@@ -285,8 +286,8 @@ export default function WorkerReportsPage() {
                   }`}
                 >
                   {report.signature_status === "signed"
-                    ? "Firmado"
-                    : "Pendiente de firma"}
+                    ? t("signed")
+                    : t("pendingSignature")}
                 </span>
               </div>
             </div>
@@ -300,25 +301,25 @@ export default function WorkerReportsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Trabajador
+                    {t("colWorker")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    DNI
+                    {t("colDni")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Días
+                    {t("colDays")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Horas
+                    {t("colHours")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Pausas
+                    {t("colPauses")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Horas Extra
+                    {t("colOvertime")}
                   </th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">
-                    Firma
+                    {t("colSignature")}
                   </th>
                 </tr>
               </thead>
@@ -365,7 +366,7 @@ export default function WorkerReportsPage() {
                               : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                           }`}
                         >
-                          {w.signature_status === "signed" ? "Firmado" : "Pendiente"}
+                          {w.signature_status === "signed" ? t("signed") : t("pending")}
                         </span>
                       </td>
                     </tr>
@@ -376,11 +377,11 @@ export default function WorkerReportsPage() {
                             <table className="w-full">
                               <thead>
                                 <tr className="text-xs text-muted-foreground">
-                                  <th className="text-left py-1 pr-4">Fecha</th>
-                                  <th className="text-left py-1 pr-4">Entrada</th>
-                                  <th className="text-left py-1 pr-4">Salida</th>
-                                  <th className="text-left py-1 pr-4">Trabajado</th>
-                                  <th className="text-left py-1 pr-4">Pausas</th>
+                                  <th className="text-left py-1 pr-4">{t("colDate")}</th>
+                                  <th className="text-left py-1 pr-4">{t("colEntry")}</th>
+                                  <th className="text-left py-1 pr-4">{t("colExit")}</th>
+                                  <th className="text-left py-1 pr-4">{t("colWorked")}</th>
+                                  <th className="text-left py-1 pr-4">{t("colPauses")}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -420,7 +421,7 @@ export default function WorkerReportsPage() {
             </table>
             {report.workers.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
-                No hay trabajadores con registros en este periodo
+                {t("noWorkersWithRecords")}
               </p>
             )}
           </div>
@@ -429,8 +430,7 @@ export default function WorkerReportsPage() {
         {/* Empty state */}
         {!report && !loading && (
           <div className="text-center py-12 text-muted-foreground">
-            Selecciona los filtros y pulsa &quot;Generar Informe&quot; para ver el
-            resultado
+            {t("selectFiltersHint")}
           </div>
         )}
 
@@ -438,7 +438,7 @@ export default function WorkerReportsPage() {
         {loading && (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Generando informe...</p>
+            <p className="text-muted-foreground">{t("generating")}</p>
           </div>
         )}
       </div>

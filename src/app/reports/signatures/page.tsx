@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient, CompanyMonthlySummary } from "@/lib/api-client";
@@ -12,6 +13,7 @@ import { AiOutlineArrowLeft, AiOutlineUser, AiOutlineCheck, AiOutlineClockCircle
 import toast from "react-hot-toast";
 
 export default function SignaturesPage() {
+  const t = useTranslations("reports");
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<CompanyMonthlySummary | null>(null);
 
@@ -22,7 +24,7 @@ export default function SignaturesPage() {
       const data = await apiClient.getCompanyMonthlyReport(f);
       setReport(data);
     } catch {
-      toast.error("Error al cargar el estado de firmas");
+      toast.error(t("signaturesLoadError"));
     } finally {
       setLoading(false);
     }
@@ -36,10 +38,10 @@ export default function SignaturesPage() {
       <div>
         <div className="mb-6">
           <Link href="/reports" className="text-accent hover:underline text-sm flex items-center gap-1 mb-3">
-            <AiOutlineArrowLeft /> Volver a Informes
+            <AiOutlineArrowLeft /> {t("backToReportsCapital")}
           </Link>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Firmas Mensuales</h1>
-          <p className="text-muted-foreground">Estado de las firmas mensuales de los trabajadores</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t("signaturesTitle")}</h1>
+          <p className="text-muted-foreground">{t("signaturesPageSubtitle")}</p>
         </div>
 
         <ReportFilters onFilter={handleFilter} loading={loading} />
@@ -54,18 +56,18 @@ export default function SignaturesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <StatCard
-                title="Total Trabajadores"
+                title={t("statTotalWorkers")}
                 value={report.total_workers}
                 icon={<AiOutlineUser className="text-xl text-accent" />}
               />
               <StatCard
-                title="Firmados"
+                title={t("statSigned")}
                 value={signedCount}
                 variant="success"
                 icon={<AiOutlineCheck className="text-xl" />}
               />
               <StatCard
-                title="Pendientes"
+                title={t("statPending")}
                 value={pendingCount}
                 variant={pendingCount > 0 ? "warning" : "default"}
                 icon={<AiOutlineClockCircle className="text-xl" />}
@@ -76,10 +78,10 @@ export default function SignaturesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Trabajador</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">DNI</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Estado</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Fecha de Firma</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("colWorker")}</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("colDni")}</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("colStatus")}</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">{t("colSignDate")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -93,7 +95,7 @@ export default function SignaturesPage() {
                             ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                             : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                         }`}>
-                          {w.signature_status === "signed" ? "Firmado" : "Pendiente"}
+                          {w.signature_status === "signed" ? t("signed") : t("pending")}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground">
@@ -104,7 +106,7 @@ export default function SignaturesPage() {
                 </tbody>
               </table>
               {report.workers.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No hay trabajadores con registros en este periodo</p>
+                <p className="text-center text-muted-foreground py-8">{t("noWorkersWithRecords")}</p>
               )}
             </div>
           </>
@@ -112,13 +114,13 @@ export default function SignaturesPage() {
 
         {!report && !loading && (
           <div className="text-center py-12 text-muted-foreground">
-            Selecciona los filtros y pulsa &quot;Generar Informe&quot; para ver el estado de firmas
+            {t("selectFiltersSignaturesHint")}
           </div>
         )}
 
         {loading && (
           <div className="text-center py-12 text-muted-foreground">
-            Cargando estado de firmas...
+            {t("signaturesLoading")}
           </div>
         )}
       </div>

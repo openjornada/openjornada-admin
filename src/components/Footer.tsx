@@ -1,12 +1,14 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { appConfig } from "@/lib/config";
 
 export default function Footer() {
+  const t = useTranslations("footer");
   return (
     <footer className="py-4 px-6 border-t border-border bg-card">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
-        <p>
-          © {new Date().getFullYear()} {appConfig.appName}. Todos los derechos reservados.
-        </p>
+        <p>{t("rights", { year: new Date().getFullYear(), appName: appConfig.appName })}</p>
         <div className="flex items-center gap-4">
           <a
             href="https://www.openjornada.es/legal/privacidad"
@@ -14,7 +16,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
           >
-            Privacidad
+            {t("privacy")}
           </a>
           <span>·</span>
           <a
@@ -23,10 +25,10 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground transition-colors"
           >
-            Aviso Legal
+            {t("legalNotice")}
           </a>
           <span>·</span>
-          <span>Licencia AGPL-3.0</span>
+          <span>{t("license")}</span>
         </div>
       </div>
     </footer>

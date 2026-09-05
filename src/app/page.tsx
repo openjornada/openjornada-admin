@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
@@ -8,6 +9,7 @@ import { appConfig } from "@/lib/config";
 import { AiOutlineUser, AiOutlineClockCircle, AiOutlinePlus, AiOutlineEdit, AiOutlineExclamationCircle, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
 
 export default function Home() {
+  const t = useTranslations("dashboard");
   const [stats, setStats] = useState({
     totalWorkers: 0,
     totalRecords: 0,
@@ -81,11 +83,9 @@ export default function Home() {
         {/* Welcome Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Bienvenido a {appConfig.appName}
+            {t("welcome", { appName: appConfig.appName })}
           </h1>
-          <p className="text-muted-foreground">
-            Panel de administración del sistema de gestión de registros de jornada laboral
-          </p>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* Stats Cards */}
@@ -93,7 +93,7 @@ export default function Home() {
           <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Trabajadores</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("totalWorkers")}</p>
                 <p className="text-3xl font-bold text-foreground">
                   {stats.loading ? "..." : stats.totalWorkers}
                 </p>
@@ -106,14 +106,14 @@ export default function Home() {
               href="/workers"
               className="text-sm text-accent hover:underline"
             >
-              Ver todos los trabajadores →
+              {t("viewAllWorkers")}
             </Link>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Registros</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("totalRecords")}</p>
                 <p className="text-3xl font-bold text-foreground">
                   {stats.loading ? "..." : stats.totalRecords}
                 </p>
@@ -126,14 +126,14 @@ export default function Home() {
               href="/time-records"
               className="text-sm text-accent hover:underline"
             >
-              Ver todos los registros de jornada →
+              {t("viewAllRecords")}
             </Link>
           </div>
 
           <div className={`bg-card border rounded-lg p-6 ${stats.pendingChangeRequests > 0 ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border'}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Peticiones Pendientes</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("pendingChangeRequests")}</p>
                 <p className={`text-3xl font-bold ${stats.pendingChangeRequests > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>
                   {stats.loading ? "..." : stats.pendingChangeRequests}
                 </p>
@@ -146,14 +146,14 @@ export default function Home() {
               href="/change-requests"
               className={`text-sm hover:underline ${stats.pendingChangeRequests > 0 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-accent'}`}
             >
-              {stats.pendingChangeRequests > 0 ? 'Revisar peticiones pendientes →' : 'Ver peticiones de cambio →'}
+              {stats.pendingChangeRequests > 0 ? t("reviewPendingRequests") : t("viewChangeRequests")}
             </Link>
           </div>
 
           <div className={`bg-card border rounded-lg p-6 ${pendingAbsences > 0 ? 'border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/10' : 'border-border'}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Ausencias Pendientes</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("pendingAbsences")}</p>
                 <p className={`text-3xl font-bold ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-foreground'}`}>
                   {absenceLoading || stats.loading ? "..." : pendingAbsences}
                 </p>
@@ -166,7 +166,7 @@ export default function Home() {
               href="/absences"
               className={`text-sm hover:underline ${pendingAbsences > 0 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-accent'}`}
             >
-              {pendingAbsences > 0 ? 'Revisar ausencias pendientes →' : 'Ver ausencias →'}
+              {pendingAbsences > 0 ? t("reviewPendingAbsences") : t("viewAbsences")}
             </Link>
           </div>
 
@@ -174,13 +174,13 @@ export default function Home() {
           <div className={`bg-card border rounded-lg p-6 ${stats.smsFailedToday > 0 ? 'border-red-400 bg-red-50/50 dark:bg-red-900/10' : 'border-border'}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">SMS Enviados Hoy</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("smsSentToday")}</p>
                 <p className={`text-3xl font-bold ${stats.smsFailedToday > 0 ? 'text-destructive' : 'text-foreground'}`}>
                   {stats.loading ? "..." : stats.smsSentToday}
                 </p>
                 {!stats.loading && stats.smsFailedToday > 0 && (
                   <p className="text-xs text-destructive mt-1">
-                    {stats.smsFailedToday} fallido{stats.smsFailedToday !== 1 ? "s" : ""}
+                    {t("smsFailedCount", { count: stats.smsFailedToday })}
                   </p>
                 )}
               </div>
@@ -192,14 +192,14 @@ export default function Home() {
               href="/sms/history"
               className={`text-sm hover:underline ${stats.smsFailedToday > 0 ? 'text-destructive font-medium' : 'text-accent'}`}
             >
-              {stats.smsFailedToday > 0 ? 'Ver SMS fallidos →' : 'Ver historial SMS →'}
+              {stats.smsFailedToday > 0 ? t("viewFailedSms") : t("viewSmsHistory")}
             </Link>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="bg-card border border-border rounded-lg p-6">
-          <h2 className="text-xl font-bold text-foreground mb-4">Acciones Rápidas</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">{t("quickActions")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               href="/workers/new"
@@ -209,8 +209,8 @@ export default function Home() {
                 <AiOutlinePlus className="text-xl text-accent" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Nuevo Trabajador</p>
-                <p className="text-sm text-muted-foreground">Registrar nuevo empleado</p>
+                <p className="font-medium text-foreground">{t("newWorker")}</p>
+                <p className="text-sm text-muted-foreground">{t("newWorkerDesc")}</p>
               </div>
             </Link>
 
@@ -222,8 +222,8 @@ export default function Home() {
                 <AiOutlineUser className="text-xl text-accent" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Gestionar Trabajadores</p>
-                <p className="text-sm text-muted-foreground">Ver y editar trabajadores</p>
+                <p className="font-medium text-foreground">{t("manageWorkers")}</p>
+                <p className="text-sm text-muted-foreground">{t("manageWorkersDesc")}</p>
               </div>
             </Link>
 
@@ -235,8 +235,8 @@ export default function Home() {
                 <AiOutlineClockCircle className="text-xl text-accent" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Registros de Jornada</p>
-                <p className="text-sm text-muted-foreground">Consultar entradas y salidas</p>
+                <p className="font-medium text-foreground">{t("timeRecords")}</p>
+                <p className="text-sm text-muted-foreground">{t("timeRecordsDesc")}</p>
               </div>
             </Link>
 
@@ -255,7 +255,7 @@ export default function Home() {
               </div>
               <div>
                 <p className={`font-medium ${stats.pendingChangeRequests > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-foreground'}`}>
-                  Peticiones de Cambio
+                  {t("changeRequests")}
                   {stats.pendingChangeRequests > 0 && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
                       {stats.pendingChangeRequests}
@@ -263,7 +263,7 @@ export default function Home() {
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {stats.pendingChangeRequests > 0 ? 'Hay peticiones por revisar' : 'Gestionar solicitudes'}
+                  {stats.pendingChangeRequests > 0 ? t("changeRequestsPendingDesc") : t("changeRequestsDesc")}
                 </p>
               </div>
             </Link>
@@ -276,8 +276,8 @@ export default function Home() {
                 <AiOutlineBarChart className="text-xl text-accent" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Ver Informes</p>
-                <p className="text-sm text-muted-foreground">Informes de jornada y cumplimiento</p>
+                <p className="font-medium text-foreground">{t("reports")}</p>
+                <p className="text-sm text-muted-foreground">{t("reportsDesc")}</p>
               </div>
             </Link>
 
@@ -296,7 +296,7 @@ export default function Home() {
               </div>
               <div>
                 <p className={`font-medium ${pendingAbsences > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-foreground'}`}>
-                  Ausencias y Vacaciones
+                  {t("absences")}
                   {pendingAbsences > 0 && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
                       {pendingAbsences}
@@ -304,7 +304,7 @@ export default function Home() {
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {pendingAbsences > 0 ? 'Hay solicitudes por revisar' : 'Gestionar solicitudes'}
+                  {pendingAbsences > 0 ? t("absencesPendingDesc") : t("absencesDesc")}
                 </p>
               </div>
             </Link>
@@ -317,8 +317,8 @@ export default function Home() {
                 <AiOutlineCalendar className="text-xl text-accent" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Calendario de Equipo</p>
-                <p className="text-sm text-muted-foreground">Vista calendario de ausencias</p>
+                <p className="font-medium text-foreground">{t("teamCalendar")}</p>
+                <p className="text-sm text-muted-foreground">{t("teamCalendarDesc")}</p>
               </div>
             </Link>
           </div>
@@ -327,28 +327,27 @@ export default function Home() {
         {/* Info Section */}
         <div className="mt-8 bg-accent/5 border border-accent/20 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            Acerca de {appConfig.appName}
+            {t("aboutTitle", { appName: appConfig.appName })}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {appConfig.appName} es un sistema de código abierto para la gestión de registros de jornada laboral,
-            diseñado para cumplir con la normativa española de 2026 sobre registro digital de jornada.
+            {t("aboutBody", { appName: appConfig.appName })}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="font-medium text-foreground mb-1">✓ 100% Código Abierto</p>
-              <p className="text-muted-foreground">Código auditable y transparente</p>
+              <p className="font-medium text-foreground mb-1">{t("featureOpenSource")}</p>
+              <p className="text-muted-foreground">{t("featureOpenSourceDesc")}</p>
             </div>
             <div>
-              <p className="font-medium text-foreground mb-1">✓ Auto-hospedable</p>
-              <p className="text-muted-foreground">Tus datos en tu servidor</p>
+              <p className="font-medium text-foreground mb-1">{t("featureSelfHosted")}</p>
+              <p className="text-muted-foreground">{t("featureSelfHostedDesc")}</p>
             </div>
             <div>
-              <p className="font-medium text-foreground mb-1">✓ Cumplimiento Legal</p>
-              <p className="text-muted-foreground">Normativa 2026 compatible</p>
+              <p className="font-medium text-foreground mb-1">{t("featureCompliance")}</p>
+              <p className="text-muted-foreground">{t("featureComplianceDesc")}</p>
             </div>
             <div>
-              <p className="font-medium text-foreground mb-1">✓ Peticiones de Cambio</p>
-              <p className="text-muted-foreground">Los trabajadores pueden solicitar correcciones en sus registros</p>
+              <p className="font-medium text-foreground mb-1">{t("featureChangeRequests")}</p>
+              <p className="text-muted-foreground">{t("featureChangeRequestsDesc")}</p>
             </div>
           </div>
         </div>

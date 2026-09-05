@@ -1,21 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import EnabledCompanySelect from "@/components/absences/EnabledCompanySelect";
 import { apiClient, Absence } from "@/lib/api-client";
 import { getCurrentMonthToYearEndRange } from "@/utils/dateFormatters";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineBank, AiOutlineCalendar, AiOutlineEye, AiOutlineSetting } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-const statusLabels: Record<string, string> = {
-  pending: "Pendiente",
-  accepted: "Aceptada",
-  rejected: "Rechazada",
-  cancelled: "Cancelada",
-};
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -25,6 +20,9 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AbsencesPage() {
+  const t = useTranslations("absences");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   const router = useRouter();
   const [companyId, setCompanyId] = useState("");
   const [absences, setAbsences] = useState<Absence[]>([]);
@@ -61,7 +59,7 @@ export default function AbsencesPage() {
       setAbsences(data);
     } catch (error) {
       console.error("Error loading absences:", error);
-      toast.error("Error al cargar las ausencias");
+      toast.error(getApiErrorMessage(error, t("loadError")));
     } finally {
       setLoading(false);
       setFiltering(false);
@@ -102,9 +100,9 @@ export default function AbsencesPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <AiOutlineCalendar />
-              Ausencias y Vacaciones
+              {t("title")}
             </h1>
-            <p className="text-muted-foreground">Gestiona las solicitudes de ausencia de los trabajadores</p>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <Link
@@ -112,14 +110,14 @@ export default function AbsencesPage() {
               className="flex items-center gap-2 text-accent hover:underline text-sm font-medium"
             >
               <AiOutlineCalendar />
-              Calendario de equipo
+              {t("teamCalendar")}
             </Link>
             <Link
               href="/settings/absences"
               className="flex items-center gap-2 text-accent hover:underline text-sm font-medium"
             >
               <AiOutlineSetting />
-              Configurar política
+              {t("configurePolicy")}
             </Link>
           </div>
         </div>
@@ -135,12 +133,12 @@ export default function AbsencesPage() {
               <>
                 <div>
                   <label htmlFor="search" className="block text-sm font-medium text-foreground mb-2">
-                    Buscar por trabajador
+                    {tc("searchWorker")}
                   </label>
                   <input
                     type="text"
                     id="search"
-                    placeholder="Buscar por nombre o apellidos..."
+                    placeholder={tc("searchPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
@@ -150,7 +148,7 @@ export default function AbsencesPage() {
                 <div className="flex flex-wrap items-end gap-4">
                   <div className="flex-1 min-w-[200px]">
                     <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
-                      Estado
+                      {tc("status")}
                     </label>
                     <select
                       id="status"
@@ -158,17 +156,17 @@ export default function AbsencesPage() {
                       onChange={(e) => setStatusFilter(e.target.value)}
                       className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     >
-                      <option value="">Todas</option>
-                      <option value="pending">Pendiente</option>
-                      <option value="accepted">Aceptada</option>
-                      <option value="rejected">Rechazada</option>
-                      <option value="cancelled">Cancelada</option>
+                      <option value="">{tc("all")}</option>
+                      <option value="pending">{tc("statuses.pending")}</option>
+                      <option value="accepted">{tc("statuses.accepted")}</option>
+                      <option value="rejected">{tc("statuses.rejected")}</option>
+                      <option value="cancelled">{tc("statuses.cancelled")}</option>
                     </select>
                   </div>
 
                   <div className="flex-1 min-w-[200px]">
                     <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
-                      Fecha de inicio
+                      {tc("startDate")}
                     </label>
                     <input
                       type="date"
@@ -181,7 +179,7 @@ export default function AbsencesPage() {
 
                   <div className="flex-1 min-w-[200px]">
                     <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
-                      Fecha de fin
+                      {tc("endDate")}
                     </label>
                     <input
                       type="date"
@@ -197,14 +195,14 @@ export default function AbsencesPage() {
                     disabled={filtering}
                     className="bg-accent text-accent-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                   >
-                    {filtering ? "Filtrando..." : "Filtrar"}
+                    {filtering ? tc("filtering") : tc("filter")}
                   </button>
 
                   <button
                     onClick={handleClearFilters}
                     className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
                   >
-                    Limpiar
+                    {tc("clearFilters")}
                   </button>
                 </div>
               </>
@@ -217,7 +215,7 @@ export default function AbsencesPage() {
           <div className="bg-card border border-border rounded-lg p-8 text-center">
             <AiOutlineBank className="text-5xl text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              Selecciona una empresa para ver las solicitudes de ausencia
+              {t("selectCompany")}
             </p>
           </div>
         )}
@@ -228,13 +226,13 @@ export default function AbsencesPage() {
             {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Cargando ausencias...</p>
+                <p className="text-muted-foreground">{t("loading")}</p>
               </div>
             ) : filteredAbsences.length === 0 ? (
               <div className="p-8 text-center">
                 <AiOutlineCalendar className="text-6xl text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  {searchTerm ? "No se encontraron ausencias que coincidan con tu búsqueda" : "No hay ausencias para mostrar"}
+                  {searchTerm ? t("emptyFiltered") : t("empty")}
                 </p>
               </div>
             ) : (
@@ -243,25 +241,25 @@ export default function AbsencesPage() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Trabajador
+                        {tc("worker")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Tipo
+                        {t("typeCol")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Fechas
+                        {t("datesCol")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Días
+                        {t("daysCol")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Estado
+                        {tc("status")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Solicitada
+                        {t("requestedCol")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Acciones
+                        {tc("actions")}
                       </th>
                     </tr>
                   </thead>
@@ -291,11 +289,11 @@ export default function AbsencesPage() {
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[absence.status]}`}
                           >
-                            {statusLabels[absence.status]}
+                            {tc(`statuses.${absence.status}`)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          {new Date(absence.created_at).toLocaleDateString("es-ES")}
+                          {new Date(absence.created_at).toLocaleDateString(locale)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
@@ -306,7 +304,7 @@ export default function AbsencesPage() {
                             className="text-accent hover:text-accent/80 font-medium inline-flex items-center gap-1"
                           >
                             <AiOutlineEye className="text-lg" />
-                            Ver detalle
+                            {tc("viewDetail")}
                           </button>
                         </td>
                       </tr>
@@ -321,9 +319,9 @@ export default function AbsencesPage() {
         {/* Summary */}
         {companyId && filteredAbsences.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Mostrando {filteredAbsences.length} ausencia{filteredAbsences.length !== 1 ? "s" : ""}
-            {searchTerm && ` (filtrado por "${searchTerm}")`}
-            {absences.length !== filteredAbsences.length && ` de ${absences.length} total${absences.length !== 1 ? "es" : ""}`}
+            {searchTerm
+              ? t("showingFiltered", { shown: filteredAbsences.length, total: absences.length, term: searchTerm })
+              : t("showing", { count: filteredAbsences.length })}
           </div>
         )}
       </div>

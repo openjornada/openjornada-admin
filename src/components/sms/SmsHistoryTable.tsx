@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AiOutlineMessage } from "react-icons/ai";
 import SmsStatusBadge from "./SmsStatusBadge";
 import type { SmsMessage } from "@/lib/api-client";
@@ -13,11 +14,12 @@ interface SmsHistoryTableProps {
 }
 
 export default function SmsHistoryTable({ messages, loading = false, compact = false }: SmsHistoryTableProps) {
+  const t = useTranslations("sms.history");
   if (loading) {
     return (
       <div className="p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Cargando mensajes...</p>
+        <p className="text-muted-foreground">{t("loading")}</p>
       </div>
     );
   }
@@ -26,7 +28,7 @@ export default function SmsHistoryTable({ messages, loading = false, compact = f
     return (
       <div className="p-8 text-center">
         <AiOutlineMessage className="text-5xl text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground">No hay mensajes SMS para mostrar</p>
+        <p className="text-muted-foreground">{t("empty")}</p>
       </div>
     );
   }
@@ -39,27 +41,27 @@ export default function SmsHistoryTable({ messages, loading = false, compact = f
             {!compact && (
               <>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Fecha
+                  {t("colDate")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Trabajador
+                  {t("colWorker")}
                 </th>
               </>
             )}
             {compact && (
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Fecha
+                {t("colDate")}
               </th>
             )}
             <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Teléfono
+              {t("colPhone")}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Estado
+              {t("colStatus")}
             </th>
             {!compact && (
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Coste
+                {t("colCost")}
               </th>
             )}
           </tr>
@@ -104,7 +106,7 @@ export default function SmsHistoryTable({ messages, loading = false, compact = f
       {compact && (
         <div className="px-6 py-3 border-t border-border">
           <Link href="/sms/history" className="text-sm text-accent hover:underline">
-            Ver historial completo →
+            {t("viewFullHistory")}
           </Link>
         </div>
       )}
