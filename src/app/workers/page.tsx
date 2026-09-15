@@ -101,6 +101,7 @@ export default function WorkersPage() {
       const center = centers.find((c) => c.id === selectedCenterId);
       if (center && center.company_id !== companyId) {
         setSelectedCenterId("");
+        loadWorkers();
       }
     }
   };

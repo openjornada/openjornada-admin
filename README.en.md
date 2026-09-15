@@ -276,6 +276,7 @@ The design uses the same colors as the OpenJornada landing page:
 - `GET /api/workers/{id}` - Get worker
 - `PUT /api/workers/{id}` - Update worker
 - `PUT /api/workers/{id}/work-center` - Assign/clear the worker's center for a company
+- `POST /api/workers/bulk-work-center` - Assign/clear the center for several workers at once
 - `DELETE /api/workers/{id}` - Delete worker (soft delete)
 - `GET /api/work-centers/` - List centers (optional `company_id` filter)
 - `POST /api/work-centers/` - Create center

@@ -276,6 +276,7 @@ El diseño utiliza los mismos colores que la landing page de OpenJornada:
 - `GET /api/workers/{id}` - Obtener trabajador
 - `PUT /api/workers/{id}` - Actualizar trabajador
 - `PUT /api/workers/{id}/work-center` - Asignar/limpiar el centro del trabajador para una empresa
+- `POST /api/workers/bulk-work-center` - Asignar/limpiar centro para varios trabajadores a la vez
 - `DELETE /api/workers/{id}` - Eliminar trabajador (soft delete)
 - `GET /api/work-centers/` - Listar centros (filtro opcional `company_id`)
 - `POST /api/work-centers/` - Crear centro
