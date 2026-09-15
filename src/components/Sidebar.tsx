@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlineShop, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 import { useTranslations } from "next-intl";
@@ -109,6 +109,20 @@ export default function Sidebar() {
               >
                 <AiOutlineBank className="text-xl" />
                 <span>{t("companies")}</span>
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/work-centers"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive("/work-centers")
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <AiOutlineShop className="text-xl" />
+                <span>{t("workCenters")}</span>
               </Link>
             </li>
 
