@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
-import { apiClient, type TimeRecord, type Company, type RealtimeEvent } from "@/lib/api-client";
+import { apiClient, type TimeRecord, type Company, type WorkCenter, type RealtimeEvent } from "@/lib/api-client";
 import { useRealtime, useRealtimeConnection } from "@/contexts/RealtimeProvider";
 import toast from "react-hot-toast";
 import { getApiErrorMessage } from "@/lib/error-messages";
@@ -20,6 +20,8 @@ interface FichajeCreatedPayload {
   duration_minutes?: number; // solo en exit/pause_end; ausente en entry/pause_start
   company_id?: string; // authoritative id; older frames may omit it
   company_name?: string;
+  work_center_id?: string | null; // may be absent in older frames
+  work_center_name?: string | null;
 }
 
 export default function TimeRecordsPage() {
@@ -32,6 +34,9 @@ export default function TimeRecordsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);
+  const [loadingWorkCenters, setLoadingWorkCenters] = useState(true);
+  const [selectedWorkCenterId, setSelectedWorkCenterId] = useState<string>("");
 
   // Initialize with current month range
   const monthRange = getCurrentMonthRange();
@@ -46,6 +51,8 @@ export default function TimeRecordsPage() {
     loadRecords({ start_date: monthRange.start, end_date: monthRange.end });
     // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
+    // eslint-disable-next-line react-hooks/immutability
+    loadWorkCenters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -61,7 +68,19 @@ export default function TimeRecordsPage() {
     }
   };
 
-  const loadRecords = async (filters?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string }) => {
+  const loadWorkCenters = async () => {
+    try {
+      const data = await apiClient.getWorkCenters();
+      setWorkCenters(data);
+    } catch (error) {
+      console.error("Error loading work centers:", error);
+      toast.error(getApiErrorMessage(error, t("centersLoadError")));
+    } finally {
+      setLoadingWorkCenters(false);
+    }
+  };
+
+  const loadRecords = async (filters?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string }) => {
     setFiltering(true);
     try {
       const data = await apiClient.getTimeRecords(filters);
@@ -76,10 +95,11 @@ export default function TimeRecordsPage() {
   };
 
   const buildCurrentFilters = () => {
-    const filters: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string } = {};
+    const filters: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string } = {};
     if (startDate) filters.start_date = startDate;
     if (endDate) filters.end_date = endDate;
     if (selectedCompanyId) filters.company_id = selectedCompanyId;
+    if (selectedWorkCenterId) filters.work_center_id = selectedWorkCenterId;
     if (searchTerm) filters.worker_name = searchTerm;
     return filters;
   };
@@ -88,12 +108,24 @@ export default function TimeRecordsPage() {
     loadRecords(buildCurrentFilters());
   };
 
+  const handleCompanyFilterChange = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+    // Reset the center filter if the selected center doesn't belong to the new company
+    if (selectedWorkCenterId) {
+      const center = workCenters.find((c) => c.id === selectedWorkCenterId);
+      if (center && center.company_id !== companyId) {
+        setSelectedWorkCenterId("");
+      }
+    }
+  };
+
   const handleClearFilters = () => {
     const monthRange = getCurrentMonthRange();
     setStartDate(monthRange.start);
     setEndDate(monthRange.end);
     setSearchTerm("");
     setSelectedCompanyId("");
+    setSelectedWorkCenterId("");
     loadRecords({ start_date: monthRange.start, end_date: monthRange.end });
   };
 
@@ -106,6 +138,10 @@ export default function TimeRecordsPage() {
 
   // Records are now filtered on the backend
   const filteredRecords = records;
+
+  const centerOptions = selectedCompanyId
+    ? workCenters.filter((c) => c.company_id === selectedCompanyId)
+    : workCenters;
 
   // Live insert on "fichaje.created" (no refetch): the list is ordered by
   // created_at desc, so a just-created record goes on top. Only inserted if it
@@ -124,6 +160,11 @@ export default function TimeRecordsPage() {
         const selected = companies.find((c) => c.id === selectedCompanyId);
         if (!selected || selected.name !== payload.company_name) return;
       }
+    }
+    // Work center filter: only applied when the payload carries the center id;
+    // older frames without it are not dropped (can't verify the match).
+    if (selectedWorkCenterId) {
+      if (payload.work_center_id !== undefined && payload.work_center_id !== selectedWorkCenterId) return;
     }
     // Date filter: both sides compare UTC calendar dates. getTimeRecords sends no
     // timezone param, so the backend filters with its UTC default and this slice(0,10)
@@ -148,6 +189,8 @@ export default function TimeRecordsPage() {
       company_id:
         payload.company_id ?? companies.find((c) => c.name === payload.company_name)?.id,
       company_name: payload.company_name,
+      work_center_id: payload.work_center_id ?? null,
+      work_center_name: payload.work_center_name ?? null,
     };
 
     setRecords((prev) =>
@@ -282,13 +325,38 @@ export default function TimeRecordsPage() {
                   <select
                     id="company"
                     value={selectedCompanyId}
-                    onChange={(e) => setSelectedCompanyId(e.target.value)}
+                    onChange={(e) => handleCompanyFilterChange(e.target.value)}
                     className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   >
                     <option value="">{t("allCompanies")}</option>
                     {companies.map((company) => (
                       <option key={company.id} value={company.id}>
                         {company.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-[200px]">
+                <label htmlFor="center" className="block text-sm font-medium text-foreground mb-2">
+                  {t("centerFilter")}
+                </label>
+                {loadingWorkCenters ? (
+                  <div className="w-full px-4 py-2 border border-input bg-background rounded-lg text-sm text-muted-foreground">
+                    {tc("loading")}
+                  </div>
+                ) : (
+                  <select
+                    id="center"
+                    value={selectedWorkCenterId}
+                    onChange={(e) => setSelectedWorkCenterId(e.target.value)}
+                    className="w-full px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  >
+                    <option value="">{t("allCenters")}</option>
+                    {centerOptions.map((center) => (
+                      <option key={center.id} value={center.id}>
+                        {center.name}
                       </option>
                     ))}
                   </select>
@@ -336,7 +404,7 @@ export default function TimeRecordsPage() {
             <div className="p-8 text-center">
               <AiOutlineClockCircle className="text-6xl text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {(searchTerm || selectedCompanyId) ? t("emptyFiltered") : t("empty")}
+                {(searchTerm || selectedCompanyId || selectedWorkCenterId) ? t("emptyFiltered") : t("empty")}
               </p>
             </div>
           ) : (
@@ -349,6 +417,9 @@ export default function TimeRecordsPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {tc("company")}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {t("centerColumn")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {t("type")}
@@ -372,6 +443,9 @@ export default function TimeRecordsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {record.company_name || tc("notAvailable")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {record.work_center_name || tc("notAvailable")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span

@@ -87,6 +87,8 @@ interface Worker {
   created_at: string;
   company_ids: string[];
   company_names: string[];
+  work_center_assignments: Record<string, string>; // company_id -> work_center_id
+  work_center_names: Record<string, string>; // company_id -> center name
   sms_config?: { sms_enabled: boolean };
 }
 
@@ -184,6 +186,8 @@ interface TimeRecord {
   duration_minutes?: number;
   company_id?: string;
   company_name?: string;
+  work_center_id: string | null;
+  work_center_name: string | null;
   pause_type_id?: string;
   pause_type_name?: string;
   pause_counts_as_work?: boolean;
@@ -210,6 +214,51 @@ interface UpdateCompanyData {
   name?: string;
   absence_management_enabled?: boolean;
   notification_language?: SupportedLocale;
+}
+
+interface WorkCenter {
+  id: string;
+  name: string;
+  code: string | null;
+  address: string | null;
+  company_id: string;
+  company_name: string;
+  created_at: string;
+  updated_at?: string;
+  deleted_at?: string;
+  deleted_by?: string;
+}
+
+interface CreateWorkCenterData {
+  name: string;
+  code?: string;
+  address?: string;
+  company_id: string;
+}
+
+interface UpdateWorkCenterData {
+  name?: string;
+  code?: string | null;
+  address?: string | null;
+}
+
+interface WorkerWorkCenterAssignment {
+  company_id: string;
+  work_center_id: string | null;
+}
+
+interface WorkerBulkWorkCenterRequest {
+  worker_ids: string[];
+  action: "assign" | "clear";
+  company_id?: string | null;
+  work_center_id?: string | null;
+}
+
+interface WorkerBulkWorkCenterResult {
+  total: number;
+  updated: number;
+  skipped: number;
+  detail?: string | null;
 }
 
 interface Incident {
@@ -775,8 +824,8 @@ class ApiClient {
   }
 
   // Workers endpoints
-  async getWorkers() {
-    const response = await this.client.get("/api/workers/");
+  async getWorkers(params?: { work_center_id?: string }): Promise<Worker[]> {
+    const response = await this.client.get<Worker[]>("/api/workers/", { params });
     return response.data;
   }
 
@@ -805,7 +854,7 @@ class ApiClient {
   }
 
   // Time records endpoints
-  async getTimeRecords(params?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string }): Promise<TimeRecord[]> {
+  async getTimeRecords(params?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string }): Promise<TimeRecord[]> {
     const response = await this.client.get("/api/time-records/", { params });
     return response.data;
   }
@@ -870,6 +919,41 @@ class ApiClient {
 
   async deleteCompany(id: string): Promise<void> {
     await this.client.delete(`/api/companies/${id}`);
+  }
+
+  // Work centers endpoints
+  async getWorkCenters(params?: { company_id?: string }): Promise<WorkCenter[]> {
+    const response = await this.client.get<WorkCenter[]>("/api/work-centers/", { params });
+    return response.data;
+  }
+
+  async getWorkCenter(id: string): Promise<WorkCenter> {
+    const response = await this.client.get<WorkCenter>(`/api/work-centers/${id}`);
+    return response.data;
+  }
+
+  async createWorkCenter(data: CreateWorkCenterData): Promise<WorkCenter> {
+    const response = await this.client.post<WorkCenter>("/api/work-centers/", data);
+    return response.data;
+  }
+
+  async updateWorkCenter(id: string, data: UpdateWorkCenterData): Promise<WorkCenter> {
+    const response = await this.client.put<WorkCenter>(`/api/work-centers/${id}`, data);
+    return response.data;
+  }
+
+  async deleteWorkCenter(id: string): Promise<void> {
+    await this.client.delete(`/api/work-centers/${id}`);
+  }
+
+  async assignWorkerWorkCenter(workerId: string, data: WorkerWorkCenterAssignment): Promise<Worker> {
+    const response = await this.client.put<Worker>(`/api/workers/${workerId}/work-center`, data);
+    return response.data;
+  }
+
+  async bulkWorkCenter(data: WorkerBulkWorkCenterRequest): Promise<WorkerBulkWorkCenterResult> {
+    const response = await this.client.post<WorkerBulkWorkCenterResult>("/api/workers/bulk-work-center", data);
+    return response.data;
   }
 
   // Pause Types endpoints
@@ -1238,6 +1322,12 @@ export type {
   Company,
   CreateCompanyData,
   UpdateCompanyData,
+  WorkCenter,
+  CreateWorkCenterData,
+  UpdateWorkCenterData,
+  WorkerWorkCenterAssignment,
+  WorkerBulkWorkCenterRequest,
+  WorkerBulkWorkCenterResult,
   Incident,
   UpdateIncidentData,
   Settings,

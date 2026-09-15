@@ -29,6 +29,11 @@ Web administration panel for OpenJornada - A work time tracking and management s
   - Team calendar to see who is out and supporting-document download
   - Policy configuration and its absence-type catalog
   - "Enable leave management" checkbox in the company profile
+- **Work centers**: Manage centers as a subdivision of a company
+  - Center CRUD (name, code, address) with company filter
+  - Optional per-company assignment of each worker to a center
+  - "Center" column and center filter in the worker listing
+  - Deleting a center automatically unassigns its workers (history is preserved)
 
 ## Technologies
 
@@ -266,11 +271,18 @@ The design uses the same colors as the OpenJornada landing page:
 
 - `POST /api/token` - Authentication
 - `GET /api/users/me` - Get current user
-- `GET /api/workers/` - List workers
+- `GET /api/workers/` - List workers (optional `work_center_id` filter)
 - `POST /api/workers/` - Create worker
 - `GET /api/workers/{id}` - Get worker
 - `PUT /api/workers/{id}` - Update worker
+- `PUT /api/workers/{id}/work-center` - Assign/clear the worker's center for a company
+- `POST /api/workers/bulk-work-center` - Assign/clear the center for several workers at once
 - `DELETE /api/workers/{id}` - Delete worker (soft delete)
+- `GET /api/work-centers/` - List centers (optional `company_id` filter)
+- `POST /api/work-centers/` - Create center
+- `GET /api/work-centers/{id}` - Get center
+- `PUT /api/work-centers/{id}` - Update center
+- `DELETE /api/work-centers/{id}` - Delete center (soft delete + automatic unassignment)
 - `GET /api/time-records/` - List time records
 - `GET /api/time-records/worker/{id}` - Time records by worker
 - `GET /api/reports/monthly` - Company monthly report

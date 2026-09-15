@@ -29,6 +29,8 @@ export default function SubscriptionSettings() {
   const [openingPortal, setOpeningPortal] = useState(false);
 
   useEffect(() => {
+    // TODO: migrar a hook de datos (fetch-on-mount)
+    // eslint-disable-next-line react-hooks/immutability
     fetchStatus();
   }, []);
 

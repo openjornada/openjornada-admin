@@ -29,6 +29,11 @@ Panel de administración web para OpenJornada - Sistema de gestión de registros
   - Calendario de equipo para ver quién está fuera y descarga de justificantes
   - Configuración de la política y su catálogo de tipos de ausencia
   - Casilla "Habilitar gestión de vacaciones" en la ficha de empresa
+- **Centros de trabajo**: Gestión de centros como subdivisión de una empresa
+  - CRUD de centros (nombre, código, dirección) con filtro por empresa
+  - Asignación opcional de cada trabajador a un centro por empresa
+  - Columna "Centro" y filtro por centro en el listado de trabajadores
+  - El borrado de un centro desasigna automáticamente a sus trabajadores (el histórico se conserva)
 
 ## Tecnologías
 
@@ -266,11 +271,18 @@ El diseño utiliza los mismos colores que la landing page de OpenJornada:
 
 - `POST /api/token` - Autenticación
 - `GET /api/users/me` - Obtener usuario actual
-- `GET /api/workers/` - Listar trabajadores
+- `GET /api/workers/` - Listar trabajadores (filtro opcional `work_center_id`)
 - `POST /api/workers/` - Crear trabajador
 - `GET /api/workers/{id}` - Obtener trabajador
 - `PUT /api/workers/{id}` - Actualizar trabajador
+- `PUT /api/workers/{id}/work-center` - Asignar/limpiar el centro del trabajador para una empresa
+- `POST /api/workers/bulk-work-center` - Asignar/limpiar centro para varios trabajadores a la vez
 - `DELETE /api/workers/{id}` - Eliminar trabajador (soft delete)
+- `GET /api/work-centers/` - Listar centros (filtro opcional `company_id`)
+- `POST /api/work-centers/` - Crear centro
+- `GET /api/work-centers/{id}` - Obtener centro
+- `PUT /api/work-centers/{id}` - Actualizar centro
+- `DELETE /api/work-centers/{id}` - Eliminar centro (soft delete + desasignación automática)
 - `GET /api/time-records/` - Listar registros
 - `GET /api/time-records/worker/{id}` - Registros por trabajador
 - `GET /api/reports/monthly` - Informe mensual de empresa
