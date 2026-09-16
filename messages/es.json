@@ -400,6 +400,7 @@
     "allCenters": "Todos los centros",
     "centerFilter": "Centro",
     "centerColumn": "Centro",
+    "dni": "DNI",
     "centersLoadError": "Error al cargar los centros de trabajo",
     "exportExcel": "Exportar a Excel",
     "exportWithCount": "Exportar a Excel ({count} registros)",
@@ -415,20 +416,15 @@
     "detail": "Detalle",
     "dateTime": "Fecha y Hora",
     "duration": "Duración",
+    "dailyTotal": "Total diario",
+    "weeklyTotal": "Total semanal",
+    "monthlyTotal": "Total mensual",
     "pauseCountsAsWork": "⏱️ Cuenta como trabajo",
     "pauseOutsideShift": "⏸️ Fuera de jornada",
     "sheetName": "Registros de Jornada",
     "fileName": "registros_jornada",
-    "excelHeaders": {
-      "dni": "DNI",
-      "worker": "Trabajador",
-      "company": "Empresa",
-      "type": "Tipo",
-      "pauseType": "Tipo de Pausa",
-      "pauseCounts": "Pausa Cuenta como Trabajo",
-      "dateTime": "Fecha y Hora",
-      "duration": "Duración"
-    }
+    "columnsButton": "Columnas",
+    "columnsModalTitle": "Columnas visibles"
   },
   "pauseTypes": {
     "title": "Tipos de Pausa",

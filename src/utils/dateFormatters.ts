@@ -155,6 +155,29 @@ export const getBrowserTimezone = (): string => {
 };
 
 /**
+ * Devuelve la fecha (YYYY-MM-DD) de un instante UTC en la zona horaria local
+ * del navegador. Es el equivalente "solo fecha" de getBrowserTimezone(): el
+ * mismo día natural con el que el listado de fichajes filtra en el backend.
+ *
+ * @param utcDateStr - String ISO 8601 en UTC (ej: "2025-12-05T23:30:00.000Z")
+ * @returns String YYYY-MM-DD en zona local, o "" si la fecha no es válida
+ */
+export const getLocalDateString = (
+  utcDateStr: string | null | undefined
+): string => {
+  if (!utcDateStr) return '';
+
+  const date = new Date(utcDateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Nombre del mes en el idioma de UI activo (capitalizado).
  */
 export const getMonthName = (month: number): string => {

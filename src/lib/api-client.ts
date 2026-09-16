@@ -191,6 +191,12 @@ interface TimeRecord {
   pause_type_id?: string;
   pause_type_name?: string;
   pause_counts_as_work?: boolean;
+  /** Per-worker worked minutes for the record's day (same value on every row); absent when unavailable. */
+  daily_total_minutes?: number;
+  /** Per-worker worked minutes for the ISO week (Monday-Sunday); absent when unavailable. */
+  weekly_total_minutes?: number;
+  /** Per-worker worked minutes for the calendar month; absent when unavailable. */
+  monthly_total_minutes?: number;
 }
 
 interface Company {
@@ -854,7 +860,7 @@ class ApiClient {
   }
 
   // Time records endpoints
-  async getTimeRecords(params?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string }): Promise<TimeRecord[]> {
+  async getTimeRecords(params?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string; timezone?: string }): Promise<TimeRecord[]> {
     const response = await this.client.get("/api/time-records/", { params });
     return response.data;
   }

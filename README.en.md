@@ -12,6 +12,8 @@ Web administration panel for OpenJornada - A work time tracking and management s
   - Edit worker information
   - Delete workers (soft delete)
 - **Time record viewing**: View all clock-in/clock-out records with date filters
+  - Visible-column selector, persisted per admin user
+  - Per-worker total columns: daily, weekly (ISO week) and monthly
 - **Dashboard**: Statistics and quick access to main features
 - **Reports and compliance**: Monthly reports, export (CSV/XLSX/PDF) and signatures
   - Monthly report per worker with daily breakdown

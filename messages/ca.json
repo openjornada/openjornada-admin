@@ -400,6 +400,7 @@
     "allCenters": "Tots els centres",
     "centerFilter": "Centre",
     "centerColumn": "Centre",
+    "dni": "DNI",
     "centersLoadError": "Error en carregar els centres de treball",
     "exportExcel": "Exportar a Excel",
     "exportWithCount": "Exportar a Excel ({count} registres)",
@@ -415,20 +416,15 @@
     "detail": "Detall",
     "dateTime": "Data i Hora",
     "duration": "Durada",
+    "dailyTotal": "Total diari",
+    "weeklyTotal": "Total setmanal",
+    "monthlyTotal": "Total mensual",
     "pauseCountsAsWork": "⏱️ Compta com a feina",
     "pauseOutsideShift": "⏸️ Fora de jornada",
     "sheetName": "Registres de Jornada",
     "fileName": "registres_jornada",
-    "excelHeaders": {
-      "dni": "DNI",
-      "worker": "Treballador",
-      "company": "Empresa",
-      "type": "Tipus",
-      "pauseType": "Tipus de Pausa",
-      "pauseCounts": "Pausa Compta com a Feina",
-      "dateTime": "Data i Hora",
-      "duration": "Durada"
-    }
+    "columnsButton": "Columnes",
+    "columnsModalTitle": "Columnes visibles"
   },
   "pauseTypes": {
     "title": "Tipus de Pausa",
