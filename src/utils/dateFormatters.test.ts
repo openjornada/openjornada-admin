@@ -8,6 +8,7 @@ import {
   getMonthName,
   getBrowserTimezone,
   getCurrentMonthRange,
+  getLocalDateString,
 } from "./dateFormatters";
 
 // ---------------------------------------------------------------------------
@@ -242,6 +243,30 @@ describe("getBrowserTimezone", () => {
     const tz = getBrowserTimezone();
     // Valid IANA zones contain a slash (e.g., "Europe/Madrid") or are "UTC"
     expect(tz === "UTC" || tz.includes("/")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getLocalDateString
+// ---------------------------------------------------------------------------
+describe("getLocalDateString", () => {
+  it("returns empty string for missing or invalid input", () => {
+    expect(getLocalDateString(null)).toBe("");
+    expect(getLocalDateString(undefined)).toBe("");
+    expect(getLocalDateString("")).toBe("");
+    expect(getLocalDateString("not-a-date")).toBe("");
+  });
+
+  it("returns the browser-local calendar date as YYYY-MM-DD", () => {
+    const utcStr = "2025-06-15T10:30:00.000Z";
+    const date = new Date(utcStr);
+    const expected = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+
+    expect(getLocalDateString(utcStr)).toBe(expected);
+    expect(getLocalDateString(utcStr)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
 

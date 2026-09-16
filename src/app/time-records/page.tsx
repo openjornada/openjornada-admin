@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import AppWrapper from "@/components/AppWrapper";
 import { apiClient, type TimeRecord, type Company, type WorkCenter, type RealtimeEvent } from "@/lib/api-client";
 import { useRealtime, useRealtimeConnection } from "@/contexts/RealtimeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import toast from "react-hot-toast";
 import { getApiErrorMessage } from "@/lib/error-messages";
 import { AiOutlineClockCircle, AiOutlineDownload } from "react-icons/ai";
-import { formatToLocalTime, getCurrentMonthRange } from "@/utils/dateFormatters";
+import { getCurrentMonthRange, getBrowserTimezone, getLocalDateString } from "@/utils/dateFormatters";
+import {
+  buildTimeRecordColumns,
+  defaultVisibleColumnKeys,
+  resolveVisibleColumnKeys,
+  serializeVisibleColumnKeys,
+  visibleColumnsStorageKey,
+  type TimeRecordColumnKey,
+} from "@/lib/time-record-columns";
 
 // Payload of the "fichaje.created" realtime event (subset of TimeRecord fields).
 interface FichajeCreatedPayload {
@@ -22,6 +31,9 @@ interface FichajeCreatedPayload {
   company_name?: string;
   work_center_id?: string | null; // may be absent in older frames
   work_center_name?: string | null;
+  daily_total_minutes?: number; // totales del trabajador; ausentes en frames antiguos
+  weekly_total_minutes?: number; // totales del trabajador; ausentes en frames antiguos
+  monthly_total_minutes?: number; // totales del trabajador; ausentes en frames antiguos
 }
 
 export default function TimeRecordsPage() {
@@ -44,17 +56,46 @@ export default function TimeRecordsPage() {
   const [endDate, setEndDate] = useState(monthRange.end);
   const [filtering, setFiltering] = useState(false);
 
+  const { user } = useAuth();
+  const [visibleColumns, setVisibleColumns] = useState<Set<TimeRecordColumnKey>>(() =>
+    defaultVisibleColumnKeys()
+  );
+  const [showColumnsModal, setShowColumnsModal] = useState(false);
+  const columnsModalRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Load records with default month range on initial mount only
     // TODO: migrar a hook de datos (fetch-on-mount)
     // eslint-disable-next-line react-hooks/immutability
-    loadRecords({ start_date: monthRange.start, end_date: monthRange.end });
+    loadRecords({
+      start_date: monthRange.start,
+      end_date: monthRange.end,
+      timezone: getBrowserTimezone(),
+    });
     // eslint-disable-next-line react-hooks/immutability
     loadCompanies();
     // eslint-disable-next-line react-hooks/immutability
     loadWorkCenters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Read the persisted columns after mount (never during SSR) and whenever the
+  // authenticated admin changes; initial render always uses the defaults.
+  useEffect(() => {
+    const storageKey = visibleColumnsStorageKey(user);
+    // The stored preference can only be read after mount; the initial render
+    // always uses the defaults to stay hydration-safe.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setVisibleColumns(
+      storageKey
+        ? resolveVisibleColumnKeys(localStorage.getItem(storageKey))
+        : defaultVisibleColumnKeys()
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (showColumnsModal) columnsModalRef.current?.focus();
+  }, [showColumnsModal]);
 
   const loadCompanies = async () => {
     try {
@@ -80,7 +121,7 @@ export default function TimeRecordsPage() {
     }
   };
 
-  const loadRecords = async (filters?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string }) => {
+  const loadRecords = async (filters?: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string; timezone?: string }) => {
     setFiltering(true);
     try {
       const data = await apiClient.getTimeRecords(filters);
@@ -95,12 +136,13 @@ export default function TimeRecordsPage() {
   };
 
   const buildCurrentFilters = () => {
-    const filters: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string } = {};
+    const filters: { start_date?: string; end_date?: string; company_id?: string; worker_name?: string; work_center_id?: string; timezone?: string } = {};
     if (startDate) filters.start_date = startDate;
     if (endDate) filters.end_date = endDate;
     if (selectedCompanyId) filters.company_id = selectedCompanyId;
     if (selectedWorkCenterId) filters.work_center_id = selectedWorkCenterId;
     if (searchTerm) filters.worker_name = searchTerm;
+    filters.timezone = getBrowserTimezone();
     return filters;
   };
 
@@ -126,7 +168,11 @@ export default function TimeRecordsPage() {
     setSearchTerm("");
     setSelectedCompanyId("");
     setSelectedWorkCenterId("");
-    loadRecords({ start_date: monthRange.start, end_date: monthRange.end });
+    loadRecords({
+      start_date: monthRange.start,
+      end_date: monthRange.end,
+      timezone: getBrowserTimezone(),
+    });
   };
 
   const formatDuration = (minutes?: number) => {
@@ -166,13 +212,13 @@ export default function TimeRecordsPage() {
     if (selectedWorkCenterId) {
       if (payload.work_center_id !== undefined && payload.work_center_id !== selectedWorkCenterId) return;
     }
-    // Date filter: both sides compare UTC calendar dates. getTimeRecords sends no
-    // timezone param, so the backend filters with its UTC default and this slice(0,10)
-    // (UTC) matches it. If a non-UTC tz is ever passed to getTimeRecords here, this
-    // comparison must switch to the same tz (behavioral coupling, keep in sync).
-    const utcDate = payload.timestamp.slice(0, 10); // YYYY-MM-DD in UTC
-    if (startDate && utcDate < startDate) return;
-    if (endDate && utcDate > endDate) return;
+    // Date filter: the listing requests carry the browser timezone, so the
+    // backend filters by local natural day. Derive the payload's date in that
+    // same browser timezone to keep an insert near midnight consistent with the
+    // server (behavioral coupling, keep in sync).
+    const localDate = getLocalDateString(payload.timestamp); // YYYY-MM-DD in browser tz
+    if (startDate && localDate < startDate) return;
+    if (endDate && localDate > endDate) return;
     // Worker name filter: case-insensitive partial match, as in the backend regex.
     if (searchTerm && !payload.worker_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return;
@@ -191,6 +237,11 @@ export default function TimeRecordsPage() {
       company_name: payload.company_name,
       work_center_id: payload.work_center_id ?? null,
       work_center_name: payload.work_center_name ?? null,
+      // Passed straight through: undefined on older frames keeps the totals
+      // columns rendering "-" (formatDuration fallback) until the next refetch.
+      daily_total_minutes: payload.daily_total_minutes,
+      weekly_total_minutes: payload.weekly_total_minutes,
+      monthly_total_minutes: payload.monthly_total_minutes,
     };
 
     setRecords((prev) =>
@@ -211,6 +262,24 @@ export default function TimeRecordsPage() {
   const getRecordTypeLabel = (type: string) =>
     trt.has(type) ? trt(type as "entry") : type;
 
+  // Single column config driving the table header, the table cells and the
+  // Excel export (see src/lib/time-record-columns.tsx).
+  const columns = buildTimeRecordColumns({
+    t,
+    tc,
+    getRecordTypeLabel,
+    formatDuration,
+  });
+
+  const toggleColumn = (columnKey: TimeRecordColumnKey) => {
+    const next = new Set(visibleColumns);
+    if (next.has(columnKey)) next.delete(columnKey);
+    else next.add(columnKey);
+    setVisibleColumns(next);
+    const storageKey = visibleColumnsStorageKey(user);
+    if (storageKey) localStorage.setItem(storageKey, serializeVisibleColumnKeys(next));
+  };
+
   // Export to Excel function
   const handleExportToExcel = async () => {
     if (filteredRecords.length === 0) {
@@ -221,20 +290,14 @@ export default function TimeRecordsPage() {
     try {
       const XLSX = await import("xlsx");
 
-      // Prepare data for Excel
-      const headers = t.raw("excelHeaders") as Record<string, string>;
-      const dataToExport = filteredRecords.map((record) => ({
-        [headers.dni]: record.worker_id_number,
-        [headers.worker]: record.worker_name,
-        [headers.company]: record.company_name || tc("notAvailable"),
-        [headers.type]: getRecordTypeLabel(record.record_type),
-        [headers.pauseType]: record.pause_type_name || "-",
-        [headers.pauseCounts]: record.pause_counts_as_work !== undefined
-          ? (record.pause_counts_as_work ? tc("yes") : tc("no"))
-          : "-",
-        [headers.dateTime]: formatToLocalTime(record.timestamp),
-        [headers.duration]: formatDuration(record.duration_minutes),
-      }));
+      // Always export the full column set, regardless of what is visible on screen.
+      const dataToExport = filteredRecords.map((record) => {
+        const row: Record<string, string> = {};
+        for (const column of columns) {
+          row[column.label] = column.exportValue(record);
+        }
+        return row;
+      });
 
       // Create workbook and worksheet
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -379,8 +442,14 @@ export default function TimeRecordsPage() {
               </button>
             </div>
 
-            {/* Export button */}
-            <div className="flex justify-end pt-2 border-t border-border">
+            {/* Export and columns controls */}
+            <div className="flex justify-end gap-3 pt-2 border-t border-border">
+              <button
+                onClick={() => setShowColumnsModal(true)}
+                className="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+              >
+                {t("columnsButton")}
+              </button>
               <button
                 onClick={handleExportToExcel}
                 disabled={loading || filteredRecords.length === 0}
@@ -412,78 +481,28 @@ export default function TimeRecordsPage() {
               <table className="w-full">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {tc("worker")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {tc("company")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("centerColumn")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("type")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("detail")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("dateTime")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("duration")}
-                    </th>
+                    {columns
+                      .filter((column) => visibleColumns.has(column.key))
+                      .map((column) => (
+                        <th
+                          key={column.key}
+                          className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                        >
+                          {column.label}
+                        </th>
+                      ))}
                   </tr>
                 </thead>
                 <tbody className="bg-card divide-y divide-border">
                   {filteredRecords.map((record) => (
                     <tr key={record.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {record.worker_name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {record.company_name || tc("notAvailable")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {record.work_center_name || tc("notAvailable")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            record.record_type === "entry"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : record.record_type === "exit"
-                              ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                              : record.record_type === "pause_start"
-                              ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          }`}
-                        >
-                          {getRecordTypeLabel(record.record_type)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {record.pause_type_name ? (
-                          <div>
-                            <div className="font-medium text-foreground">{record.pause_type_name}</div>
-                            <div className="text-xs">
-                              {record.pause_counts_as_work ? (
-                                <span className="text-green-600 dark:text-green-400">{t("pauseCountsAsWork")}</span>
-                              ) : (
-                                <span className="text-orange-600 dark:text-orange-400">{t("pauseOutsideShift")}</span>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {formatToLocalTime(record.timestamp)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {formatDuration(record.duration_minutes)}
-                      </td>
+                      {columns
+                        .filter((column) => visibleColumns.has(column.key))
+                        .map((column) => (
+                          <td key={column.key} className={column.cellClassName}>
+                            {column.render(record)}
+                          </td>
+                        ))}
                     </tr>
                   ))}
                 </tbody>
@@ -499,6 +518,49 @@ export default function TimeRecordsPage() {
           </div>
         )}
       </div>
+
+      {/* Column selection modal */}
+      {showColumnsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowColumnsModal(false)}
+        >
+          <div
+            className="bg-card border border-border rounded-lg p-6 w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="columns-modal-title"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === "Escape") setShowColumnsModal(false); }}
+            tabIndex={-1}
+            ref={columnsModalRef}
+          >
+            <h3 id="columns-modal-title" className="text-lg font-semibold text-foreground mb-4">
+              {t("columnsModalTitle")}
+            </h3>
+            <div className="space-y-2 mb-6">
+              {columns.map((column) => (
+                <label key={column.key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns.has(column.key)}
+                    onChange={() => toggleColumn(column.key)}
+                    className="w-4 h-4 rounded border-input"
+                  />
+                  <span className="text-sm text-foreground">{column.label}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowColumnsModal(false)}
+              className="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
+            >
+              {tc("close")}
+            </button>
+          </div>
+        </div>
+      )}
     </AppWrapper>
   );
 }

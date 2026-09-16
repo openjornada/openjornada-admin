@@ -400,6 +400,7 @@
     "allCenters": "All centers",
     "centerFilter": "Center",
     "centerColumn": "Center",
+    "dni": "ID",
     "centersLoadError": "Error loading the work centers",
     "exportExcel": "Export to Excel",
     "exportWithCount": "Export to Excel ({count} records)",
@@ -415,20 +416,15 @@
     "detail": "Detail",
     "dateTime": "Date and Time",
     "duration": "Duration",
+    "dailyTotal": "Daily total",
+    "weeklyTotal": "Weekly total",
+    "monthlyTotal": "Monthly total",
     "pauseCountsAsWork": "⏱️ Counts as work",
     "pauseOutsideShift": "⏸️ Outside working hours",
     "sheetName": "Time Records",
     "fileName": "time_records",
-    "excelHeaders": {
-      "dni": "ID",
-      "worker": "Worker",
-      "company": "Company",
-      "type": "Type",
-      "pauseType": "Break Type",
-      "pauseCounts": "Break Counts as Work",
-      "dateTime": "Date and Time",
-      "duration": "Duration"
-    }
+    "columnsButton": "Columns",
+    "columnsModalTitle": "Visible columns"
   },
   "pauseTypes": {
     "title": "Break Types",

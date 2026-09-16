@@ -12,6 +12,8 @@ Panel de administración web para OpenJornada - Sistema de gestión de registros
   - Editar información de trabajadores
   - Eliminar trabajadores (eliminación lógica)
 - **Visualización de registros**: Ver todos los registros de entrada/salida con filtros por fecha
+  - Selector de columnas visibles, persistente por usuario admin
+  - Columnas de totales por trabajador: diario, semanal (semana ISO) y mensual
 - **Dashboard**: Estadísticas y accesos rápidos a funcionalidades principales
 - **Informes y cumplimiento**: Informes mensuales, exportación (CSV/XLSX/PDF) y firmas
   - Informe mensual por trabajador con desglose diario
