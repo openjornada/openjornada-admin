@@ -36,6 +36,7 @@ interface RealtimeContextType {
   unreadCount: number;
   notifications: NotificationItem[];
   markRead: (ids: string[]) => Promise<void>;
+  markAllRead: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
 }
 
@@ -131,6 +132,17 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const markAllRead = useCallback(async () => {
+    try {
+      await apiClient.markAllNotificationsRead();
+      notificationsRef.current = [];
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+    }
+  }, []);
+
   // Exactly ONE SSE connection for the whole app lifetime, gated on auth.
   // fetch-event-source retries transient errors via onerror; a clean server-side
   // close resolves the promise and we reconnect manually; a 401/403 or a missing
@@ -217,7 +229,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
   return (
     <RealtimeContext.Provider
-      value={{ subscribe, subscribeConnection, unreadCount, notifications, markRead, refreshNotifications }}
+      value={{ subscribe, subscribeConnection, unreadCount, notifications, markRead, markAllRead, refreshNotifications }}
     >
       {children}
     </RealtimeContext.Provider>
@@ -255,8 +267,8 @@ export function useRealtime(type: string, handler: EventHandler) {
  * recent unread notifications, and actions to refresh them or mark as read.
  */
 export function useNotifications() {
-  const { unreadCount, notifications, markRead, refreshNotifications } = useRealtimeContext();
-  return { unreadCount, notifications, markRead, refreshNotifications };
+  const { unreadCount, notifications, markRead, markAllRead, refreshNotifications } = useRealtimeContext();
+  return { unreadCount, notifications, markRead, markAllRead, refreshNotifications };
 }
 
 /**

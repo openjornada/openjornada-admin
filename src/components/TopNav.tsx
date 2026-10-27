@@ -33,7 +33,7 @@ export default function TopNav() {
   const t = useTranslations("topnav");
   const tr = useTranslations("common.recordTypes");
   const { user } = useAuth();
-  const { unreadCount, notifications, markRead, refreshNotifications } = useNotifications();
+  const { unreadCount, notifications, markRead, markAllRead, refreshNotifications } = useNotifications();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +97,7 @@ export default function TopNav() {
                 <p className="text-sm font-medium text-foreground">{t("notifications")}</p>
                 {notifications.length > 0 && (
                   <button
-                    onClick={() => void markRead(notifications.map((n) => n.id))}
+                    onClick={() => void markAllRead()}
                     className="text-xs text-accent hover:underline"
                   >
                     {t("markAllRead")}

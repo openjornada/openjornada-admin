@@ -1310,6 +1310,11 @@ class ApiClient {
     const response = await this.client.post<{ updated: number }>("/api/notifications/mark-read", { ids });
     return response.data;
   }
+
+  async markAllNotificationsRead(): Promise<{ updated: number }> {
+    const response = await this.client.post<{ updated: number }>("/api/notifications/mark-all-read");
+    return response.data;
+  }
 }
 
 // Export singleton instance

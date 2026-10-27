@@ -64,6 +64,7 @@ vi.mock("@/contexts/RealtimeProvider", async () => {
       unreadCount: 0,
       notifications: [],
       markRead: vi.fn(),
+      markAllRead: vi.fn(),
       refreshNotifications: vi.fn(),
     }),
   };

@@ -19,6 +19,7 @@ vi.mock("@/lib/api-client", () => ({
     getToken: vi.fn(() => "test-token"),
     getNotifications: vi.fn(),
     markNotificationsRead: vi.fn(),
+    markAllNotificationsRead: vi.fn(),
   },
 }));
 
@@ -272,6 +273,29 @@ describe("useNotifications markRead", () => {
     });
 
     expect(apiClient.markNotificationsRead).toHaveBeenCalledWith(["n1", "n2"]);
+    expect(result.current.notifications).toHaveLength(0);
+    expect(result.current.unreadCount).toBe(0);
+  });
+
+  it("markAllRead clears the list and the whole badge, even beyond the loaded items", async () => {
+    vi.mocked(apiClient.getNotifications).mockResolvedValue({
+      items: [makeNotification("n1"), makeNotification("n2")],
+      unread_count: 120,
+    });
+    vi.mocked(apiClient.markAllNotificationsRead).mockResolvedValue({ updated: 120 });
+
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+
+    await act(async () => {
+      await lastOptions().onopen({ ok: true, status: 200 });
+    });
+    expect(result.current.unreadCount).toBe(120);
+
+    await act(async () => {
+      await result.current.markAllRead();
+    });
+
+    expect(apiClient.markAllNotificationsRead).toHaveBeenCalled();
     expect(result.current.notifications).toHaveLength(0);
     expect(result.current.unreadCount).toBe(0);
   });
