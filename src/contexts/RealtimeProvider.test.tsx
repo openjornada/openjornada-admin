@@ -291,6 +291,7 @@ describe("useNotifications markRead", () => {
     });
     expect(result.current.unreadCount).toBe(120);
 
+    vi.mocked(apiClient.getNotifications).mockResolvedValueOnce({ items: [], unread_count: 0 });
     await act(async () => {
       await result.current.markAllRead();
     });
@@ -298,6 +299,32 @@ describe("useNotifications markRead", () => {
     expect(apiClient.markAllNotificationsRead).toHaveBeenCalled();
     expect(result.current.notifications).toHaveLength(0);
     expect(result.current.unreadCount).toBe(0);
+  });
+
+  it("markAllRead keeps a notification that is still unread on the server after the call", async () => {
+    vi.mocked(apiClient.getNotifications).mockResolvedValue({
+      items: [makeNotification("n1"), makeNotification("n2")],
+      unread_count: 2,
+    });
+    vi.mocked(apiClient.markAllNotificationsRead).mockResolvedValue({ updated: 2 });
+
+    const { result } = renderHook(() => useNotifications(), { wrapper });
+
+    await act(async () => {
+      await lastOptions().onopen({ ok: true, status: 200 });
+    });
+
+    // n3 was created after the server's bulk update, so it survives the resync.
+    vi.mocked(apiClient.getNotifications).mockResolvedValueOnce({
+      items: [makeNotification("n3")],
+      unread_count: 1,
+    });
+    await act(async () => {
+      await result.current.markAllRead();
+    });
+
+    expect(result.current.notifications.map((n) => n.id)).toEqual(["n3"]);
+    expect(result.current.unreadCount).toBe(1);
   });
 
   it("is a no-op for an empty id list", async () => {

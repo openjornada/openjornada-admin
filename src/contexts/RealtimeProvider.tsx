@@ -135,13 +135,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const markAllRead = useCallback(async () => {
     try {
       await apiClient.markAllNotificationsRead();
-      notificationsRef.current = [];
-      setNotifications([]);
-      setUnreadCount(0);
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
+      return;
     }
-  }, []);
+    // Resync instead of clearing: a notification pushed over SSE while the
+    // request was in flight may still be unread on the server.
+    await refreshNotifications();
+  }, [refreshNotifications]);
 
   // Exactly ONE SSE connection for the whole app lifetime, gated on auth.
   // fetch-event-source retries transient errors via onerror; a clean server-side
