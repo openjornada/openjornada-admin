@@ -207,6 +207,7 @@ interface Company {
   deleted_at?: string;
   deleted_by?: string;
   absence_management_enabled: boolean;
+  shift_planning_enabled: boolean;
   /** Language used for this company's notifications to workers (default "es"). */
   notification_language?: SupportedLocale;
 }
@@ -219,6 +220,7 @@ interface CreateCompanyData {
 interface UpdateCompanyData {
   name?: string;
   absence_management_enabled?: boolean;
+  shift_planning_enabled?: boolean;
   notification_language?: SupportedLocale;
 }
 
@@ -564,6 +566,84 @@ interface AbsenceCalendarEntry {
   start_date: string;
   end_date: string;
   status: string;
+}
+
+interface ShiftType {
+  id: string;
+  company_id: string;
+  name: string;
+  short_code: string;
+  color: string; // "#RRGGBB"
+  start_time: string; // "HH:MM"; end <= start means overnight
+  end_time: string;
+  break_minutes: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+interface CreateShiftTypeData {
+  company_id: string;
+  name: string;
+  short_code: string;
+  color: string;
+  start_time: string;
+  end_time: string;
+  break_minutes?: number;
+}
+
+type UpdateShiftTypeData = Partial<Omit<CreateShiftTypeData, "company_id">>;
+
+/** A shift in a roster cell; custom shifts have null type/name/code/color. */
+interface PlannedShift {
+  shift_type_id: string | null;
+  name: string | null;
+  short_code: string | null;
+  color: string | null;
+  start_time: string;
+  end_time: string;
+  break_minutes: number;
+}
+
+interface CellShiftInput {
+  shift_type_id?: string;
+  start_time?: string;
+  end_time?: string;
+  break_minutes?: number;
+}
+
+interface ShiftPlanWarning {
+  worker_id: string;
+  date: string;
+  code: "rest_under_12h" | "absence_overlap";
+  message: string;
+}
+
+interface RosterWorker {
+  id: string;
+  first_name: string;
+  last_name: string;
+  cells: Record<string, PlannedShift[]>;
+  planned_minutes: number;
+  /** Sorted dates in the range whose draft differs from the published version. */
+  pending_dates: string[];
+}
+
+interface Roster {
+  company_id: string;
+  start_date: string;
+  end_date: string;
+  /** Company-wide, even when filtered by work center. */
+  pending_changes: number;
+  workers: RosterWorker[];
+  warnings: ShiftPlanWarning[];
+}
+
+interface PublishShiftPlanData {
+  company_id: string;
+  start_date: string;
+  end_date: string;
+  acknowledge_warnings?: boolean;
+  notify?: boolean;
 }
 
 interface GDPRExportData {
@@ -1008,6 +1088,51 @@ class ApiClient {
     return response.data;
   }
 
+  // Shift planning endpoints
+  async getShiftTypes(companyId: string): Promise<ShiftType[]> {
+    const response = await this.client.get<ShiftType[]>("/api/shift-types", { params: { company_id: companyId } });
+    return response.data;
+  }
+
+  async createShiftType(data: CreateShiftTypeData): Promise<ShiftType> {
+    const response = await this.client.post<ShiftType>("/api/shift-types", data);
+    return response.data;
+  }
+
+  async updateShiftType(id: string, companyId: string, data: UpdateShiftTypeData): Promise<ShiftType> {
+    const response = await this.client.put<ShiftType>(`/api/shift-types/${id}`, data, { params: { company_id: companyId } });
+    return response.data;
+  }
+
+  async deleteShiftType(id: string, companyId: string): Promise<void> {
+    await this.client.delete(`/api/shift-types/${id}`, { params: { company_id: companyId } });
+  }
+
+  async getRoster(params: { company_id: string; start_date: string; end_date: string; work_center_id?: string }): Promise<Roster> {
+    const response = await this.client.get<Roster>("/api/shift-plans", { params });
+    return response.data;
+  }
+
+  async putShiftCell(data: { company_id: string; worker_id: string; date: string; shifts: CellShiftInput[] }): Promise<PlannedShift[]> {
+    const response = await this.client.put<PlannedShift[]>("/api/shift-plans/cell", data);
+    return response.data;
+  }
+
+  async copyShiftWeek(data: {
+    company_id: string;
+    source_week_start: string;
+    target_week_start: string;
+    conflict: "skip" | "overwrite";
+  }): Promise<{ copied: number; skipped: number }> {
+    const response = await this.client.post<{ copied: number; skipped: number }>("/api/shift-plans/copy-week", data);
+    return response.data;
+  }
+
+  async publishShiftPlan(data: PublishShiftPlanData): Promise<{ publication_id: string | null; changed_cells: number }> {
+    const response = await this.client.post<{ publication_id: string | null; changed_cells: number }>("/api/shift-plans/publish", data);
+    return response.data;
+  }
+
   // Absences endpoints
   async getAbsences(params: {
     company_id: string;
@@ -1356,6 +1481,15 @@ export type {
   Absence,
   UpdateAbsenceData,
   AbsenceCalendarEntry,
+  ShiftType,
+  CreateShiftTypeData,
+  UpdateShiftTypeData,
+  PlannedShift,
+  CellShiftInput,
+  ShiftPlanWarning,
+  RosterWorker,
+  Roster,
+  PublishShiftPlanData,
   BackupSchedule,
   S3ConfigInput,
   SFTPConfigInput,

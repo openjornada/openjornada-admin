@@ -23,6 +23,7 @@ export default function EditCompanyPage() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [absenceManagementEnabled, setAbsenceManagementEnabled] = useState(false);
+  const [shiftPlanningEnabled, setShiftPlanningEnabled] = useState(false);
   // Company notification language: independent of the admin's UI language.
   const [notificationLanguage, setNotificationLanguage] = useState<SupportedLocale>("es");
 
@@ -31,6 +32,7 @@ export default function EditCompanyPage() {
       const company: Company = await apiClient.getCompany(companyId);
       setName(company.name);
       setAbsenceManagementEnabled(company.absence_management_enabled);
+      setShiftPlanningEnabled(company.shift_planning_enabled ?? false);
       setNotificationLanguage(company.notification_language ?? "es");
     } catch (error) {
       console.error("Error loading company:", error);
@@ -68,6 +70,7 @@ export default function EditCompanyPage() {
       await apiClient.updateCompany(companyId, {
         name: name.trim(),
         absence_management_enabled: absenceManagementEnabled,
+        shift_planning_enabled: shiftPlanningEnabled,
         notification_language: notificationLanguage,
       });
       toast.success(t("saved"));
@@ -166,6 +169,20 @@ export default function EditCompanyPage() {
               </label>
             </div>
             <p className="text-xs text-muted-foreground -mt-4">{t("absenceModuleHelp")}</p>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="shift_planning_enabled"
+                checked={shiftPlanningEnabled}
+                onChange={(e) => setShiftPlanningEnabled(e.target.checked)}
+                className="w-5 h-5 rounded border-input text-accent focus:ring-accent"
+              />
+              <label htmlFor="shift_planning_enabled" className="text-sm font-medium text-foreground">
+                {t("shiftModule")}
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-4">{t("shiftModuleHelp")}</p>
 
             <div className="flex gap-4 pt-4">
               <button

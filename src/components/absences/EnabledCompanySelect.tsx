@@ -10,6 +10,8 @@ interface EnabledCompanySelectProps {
   onChange: (companyId: string) => void;
   disabled?: boolean;
   label?: string;
+  /** Which per-company module must be active (default: absences). */
+  module?: "absence" | "shift";
 }
 
 /**
@@ -19,8 +21,8 @@ interface EnabledCompanySelectProps {
  * needs a `company_id` (list, calendar, policy settings) picks it locally,
  * following the same pattern already used in `ReportFilters`.
  */
-export default function EnabledCompanySelect({ value, onChange, disabled, label }: EnabledCompanySelectProps) {
-  const t = useTranslations("absences");
+export default function EnabledCompanySelect({ value, onChange, disabled, label, module = "absence" }: EnabledCompanySelectProps) {
+  const t = useTranslations(module === "shift" ? "shifts" : "absences");
   const tc = useTranslations("common");
   const labelOr = label ?? tc("company");
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -31,7 +33,7 @@ export default function EnabledCompanySelect({ value, onChange, disabled, label 
     apiClient
       .getCompanies()
       .then((data) => {
-        const enabled = data.filter((c) => c.absence_management_enabled);
+        const enabled = data.filter((c) => (module === "shift" ? c.shift_planning_enabled : c.absence_management_enabled));
         setCompanies(enabled);
         if (enabled.length > 0 && !value) {
           onChange(enabled[0].id);

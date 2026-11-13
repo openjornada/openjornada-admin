@@ -105,7 +105,8 @@
     "reports": "Reports",
     "absences": "Absences & vacations",
     "settings": "Settings",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "shifts": "Shifts"
   },
   "topnav": {
     "notifications": "Notifications",
@@ -345,7 +346,9 @@
     "absenceModule": "Enable vacation management",
     "absenceModuleHelp": "Enables the absences and vacations module (requests, calendar and balance) for this company.",
     "notifLangLabel": "Notification language",
-    "notifLangHelp": "Language this company uses to send emails and SMS to its workers. Independent of the administrator's interface language."
+    "notifLangHelp": "Language this company uses to send emails and SMS to its workers. Independent of the administrator's interface language.",
+    "shiftModule": "Enable shift planning",
+    "shiftModuleHelp": "Enables the shift roster (shift types, weekly planning and publishing to workers) for this company."
   },
   "workCenters": {
     "title": "Work Centers",
@@ -658,6 +661,73 @@
       "Sat",
       "Sun"
     ]
+  },
+  "shifts": {
+    "noEnabledCompany": "No company has shift planning enabled.",
+    "enableInCompany": "Enable it in the company settings",
+    "worker": "Worker",
+    "total": "Total",
+    "overnight": "overnight shift",
+    "absent": "Absent",
+    "hasWarnings": "Warnings in this cell",
+    "warning": {
+      "rest_under_12h": "Less than 12 hours of rest between workdays",
+      "absence_overlap": "Shift on top of an approved absence"
+    },
+    "emptyDay": "No shifts this day.",
+    "type": "Type",
+    "custom": "Custom",
+    "start": "Start",
+    "end": "End",
+    "breakMinutes": "Break (min)",
+    "addShift": "Add shift",
+    "publishTitle": "Publish roster",
+    "publishSummary": "{count, plural, one {# pending change} other {# pending changes}} between {start} and {end}.",
+    "publishWholeCompany": "The whole company is published for this range, even if a work center filter is active.",
+    "publishWarnings": "{count, plural, one {There is # warning} other {There are # warnings}} in the roster:",
+    "acknowledgeWarnings": "I understand the warnings and want to publish anyway",
+    "notifyByEmail": "Notify by email",
+    "publishConfirm": "Publish",
+    "title": "Shift roster",
+    "subtitle": "Plan weekly shifts and publish them to workers",
+    "manageTypes": "Shift types",
+    "loadError": "Error loading the roster",
+    "saveError": "Error saving the shift",
+    "workCenter": "Work center",
+    "week": "Week",
+    "month": "Month",
+    "prev": "Previous",
+    "next": "Next",
+    "toolEdit": "Edit cell",
+    "toolErase": "Erase",
+    "copyPrevious": "Copy previous week",
+    "copyHelp": "Copies the draft of the previous week into the shown week. Choose what to do with cells that already have shifts.",
+    "copySkip": "Keep cells that already have shifts",
+    "copyOverwrite": "Overwrite existing cells",
+    "copied": "Copied {copied} cells, skipped {skipped}.",
+    "copyError": "Error copying the week",
+    "publish": "Publish ({count})",
+    "published": "Published: {count} cells with changes.",
+    "publishError": "Error publishing",
+    "monthReadOnly": "Read-only month view. Switch to the week view to edit.",
+    "loading": "Loading roster...",
+    "limits": "The roster warns about rest under 12 hours and shifts on approved absences. It does not detect excess hours or public holidays.",
+    "backToShifts": "Back to roster",
+    "typesTitle": "Shift types",
+    "typesSubtitle": "Shift templates assigned with one click in the roster",
+    "newType": "New type",
+    "typeSaved": "Shift type saved",
+    "typeSaveError": "Error saving the shift type",
+    "typeDeleted": "Shift type deleted",
+    "typeDeleteError": "Error deleting the shift type",
+    "confirmDeleteType": "Delete type \"{name}\"? Shifts already assigned do not change.",
+    "shortCode": "Short code",
+    "color": "Color",
+    "preview": "Preview",
+    "hours": "Hours",
+    "noTypes": "There are no shift types yet.",
+    "pendingChange": "Unpublished change",
+    "today": "Today"
   },
   "absencePolicy": {
     "title": "Absence & Vacation Policy",
@@ -1227,6 +1297,21 @@
       "log_not_found": "The SMS log was not found.",
       "invalid_locale": "The template language is not supported.",
       "template_exceeds_segment": "The template does not fit in a single SMS (160 GSM-7 characters, 70 if you use characters outside that alphabet)."
+    },
+    "shift_plan": {
+      "company_not_found": "The company does not exist.",
+      "module_disabled": "Shift planning is not enabled for this company.",
+      "shift_type_not_found": "The shift type does not exist.",
+      "worker_not_found": "The worker does not exist or does not belong to the company.",
+      "overlap": "Shifts overlap each other or an overnight shift from the previous day.",
+      "warnings_not_acknowledged": "The roster has warnings: acknowledge them to publish.",
+      "range_too_long": "The range is too long (maximum 42 days).",
+      "invalid_range": "The date range is not valid.",
+      "overlapping_weeks": "The source and target weeks overlap.",
+      "too_many_shifts": "Too many shifts in one day (maximum 10).",
+      "incomplete_shift": "Each shift needs a type or a start and end time.",
+      "invalid_time_range": "The shift time range is not valid.",
+      "invalid_break": "The break is not valid."
     }
   }
 }

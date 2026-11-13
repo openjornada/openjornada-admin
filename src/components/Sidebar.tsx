@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlineShop, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineUser, AiOutlineClockCircle, AiOutlineAlert, AiOutlineSetting, AiOutlineBank, AiOutlineShop, AiOutlinePauseCircle, AiOutlineSafety, AiOutlineCloudServer, AiOutlineBarChart, AiOutlineMessage, AiOutlineCalendar, AiOutlineSchedule } from "react-icons/ai";
 import { BiLogOutCircle as BiLogOut } from "react-icons/bi";
 import { appConfig } from "@/lib/config";
 import { useTranslations } from "next-intl";
@@ -16,6 +16,7 @@ export default function Sidebar() {
   const t = useTranslations("nav");
   const { logout } = useAuth();
   const [absenceModuleAvailable, setAbsenceModuleAvailable] = useState(false);
+  const [shiftModuleAvailable, setShiftModuleAvailable] = useState(false);
 
   useEffect(() => {
     // No existe un concepto de "empresa activa" en el admin: se muestra la
@@ -24,6 +25,7 @@ export default function Sidebar() {
       .getCompanies()
       .then((companies) => {
         setAbsenceModuleAvailable(companies.some((c) => c.absence_management_enabled));
+        setShiftModuleAvailable(companies.some((c) => c.shift_planning_enabled));
       })
       .catch(() => {
         // Silencioso: si falla, simplemente no se muestra la entrada.
@@ -279,6 +281,22 @@ export default function Sidebar() {
                 >
                   <AiOutlineCalendar className="text-xl" />
                   <span>{t("absences")}</span>
+                </Link>
+              </li>
+            )}
+
+            {shiftModuleAvailable && (
+              <li>
+                <Link
+                  href="/shifts"
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    isActive("/shifts")
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }`}
+                >
+                  <AiOutlineSchedule className="text-xl" />
+                  <span>{t("shifts")}</span>
                 </Link>
               </li>
             )}
