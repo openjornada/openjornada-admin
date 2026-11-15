@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -14,6 +14,13 @@ import { apiClient, type Roster, type ShiftType, type WorkCenter, type CellShift
 import { getApiErrorMessage } from "@/lib/error-messages";
 import { getMonthName } from "@/utils/dateFormatters";
 import { addDays, mondayOf, monthDates, toDateKey, weekDates } from "@/utils/shiftGrid";
+
+const WARNINGS_NOT_ACKNOWLEDGED = "shift_plan.warnings_not_acknowledged";
+
+function apiErrorCode(error: unknown): string | undefined {
+  const detail = (error as { response?: { data?: { detail?: { error_code?: unknown } } } })?.response?.data?.detail;
+  return typeof detail?.error_code === "string" ? detail.error_code : undefined;
+}
 
 type Tool = { kind: "edit" } | { kind: "erase" } | { kind: "type"; id: string };
 
@@ -33,8 +40,14 @@ export default function ShiftsPage() {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [publishRoster, setPublishRoster] = useState<Roster | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [requireAck, setRequireAck] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const rosterGen = useRef(0);
+  const absenceGen = useRef(0);
+  const publishGen = useRef(0);
 
   const [year, month] = anchor.split("-").map(Number);
   const dates = view === "week" ? weekDates(anchor) : monthDates(year, month);
@@ -43,6 +56,7 @@ export default function ShiftsPage() {
 
   const loadRoster = useCallback(async () => {
     if (!companyId) return;
+    const gen = ++rosterGen.current;
     try {
       const data = await apiClient.getRoster({
         company_id: companyId,
@@ -50,8 +64,10 @@ export default function ShiftsPage() {
         end_date: endDate,
         ...(workCenterId ? { work_center_id: workCenterId } : {}),
       });
+      if (gen !== rosterGen.current || data.company_id !== companyId) return;
       setRoster(data);
     } catch (error) {
+      if (gen !== rosterGen.current) return;
       toast.error(getApiErrorMessage(error, t("loadError")));
     }
   }, [companyId, startDate, endDate, workCenterId, t]);
@@ -73,6 +89,7 @@ export default function ShiftsPage() {
   // Approved absences, only when the company has the absence module on.
   useEffect(() => {
     if (!companyId) return;
+    const gen = ++absenceGen.current;
     apiClient
       .getCompany(companyId)
       .then((c) =>
@@ -81,19 +98,30 @@ export default function ShiftsPage() {
           : []
       )
       .then((entries) => {
+        if (gen !== absenceGen.current) return;
         const set = new Set<string>();
         for (const e of entries) for (const d of dates) if (e.start_date <= d && e.end_date >= d) set.add(`${e.worker_id}|${d}`);
         setAbsences(set);
       })
-      .catch(() => setAbsences(new Set()));
+      .catch(() => {
+        if (gen !== absenceGen.current) return;
+        setAbsences(new Set());
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, startDate, endDate]);
 
   const changeCompany = (id: string) => {
+    rosterGen.current += 1;
+    absenceGen.current += 1;
+    publishGen.current += 1;
     setCompanyId(id);
     setWorkCenterId("");
     setRoster(null);
+    setAbsences(new Set());
+    setPublishOpen(false);
   };
+
+  const rosterMatches = roster?.company_id === companyId;
 
   const step = (dir: 1 | -1) => {
     if (view === "week") return setAnchor(addDays(anchor, 7 * dir));
@@ -127,6 +155,7 @@ export default function ShiftsPage() {
   };
 
   const copyWeek = async (conflict: "skip" | "overwrite") => {
+    if (!rosterMatches) return;
     setBusy(true);
     try {
       const r = await apiClient.copyShiftWeek({
@@ -145,14 +174,44 @@ export default function ShiftsPage() {
     }
   };
 
+  const closePublish = () => {
+    publishGen.current += 1;
+    setPublishOpen(false);
+    setPublishError(null);
+    setRequireAck(false);
+  };
+
+  const openPublish = async () => {
+    if (!rosterMatches) return;
+    const gen = ++publishGen.current;
+    setPublishError(null);
+    setRequireAck(false);
+    try {
+      const data = await apiClient.getRoster({ company_id: companyId, start_date: startDate, end_date: endDate });
+      if (gen !== publishGen.current || data.company_id !== companyId) return;
+      setPublishRoster(data);
+      setPublishOpen(true);
+    } catch (error) {
+      if (gen !== publishGen.current) return;
+      toast.error(getApiErrorMessage(error, t("loadError")));
+    }
+  };
+
   const publish = async (opts: { acknowledge_warnings: boolean; notify: boolean }) => {
+    if (!rosterMatches) return;
     setBusy(true);
+    setPublishError(null);
     try {
       const r = await apiClient.publishShiftPlan({ company_id: companyId, start_date: startDate, end_date: endDate, ...opts });
       toast.success(t("published", { count: r.changed_cells }));
-      setPublishOpen(false);
+      closePublish();
       await loadRoster();
     } catch (error) {
+      if (apiErrorCode(error) === WARNINGS_NOT_ACKNOWLEDGED) {
+        setRequireAck(true);
+        setPublishError(getApiErrorMessage(error, t("publishError")));
+        return;
+      }
       toast.error(getApiErrorMessage(error, t("publishError")));
     } finally {
       setBusy(false);
@@ -259,12 +318,16 @@ export default function ShiftsPage() {
               {t("toolErase")}
             </button>
             <div className="ml-auto flex items-center gap-2">
-              <button onClick={() => setCopyOpen(true)} className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted text-sm">
+              <button
+                onClick={() => rosterMatches && setCopyOpen(true)}
+                disabled={!rosterMatches}
+                className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted text-sm disabled:opacity-50"
+              >
                 {t("copyPrevious")}
               </button>
               <button
-                onClick={() => setPublishOpen(true)}
-                disabled={!roster || roster.pending_changes === 0}
+                onClick={openPublish}
+                disabled={!rosterMatches || roster.pending_changes === 0}
                 className="px-4 py-1.5 rounded-lg bg-accent text-accent-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50"
               >
                 {t("publish", { count: roster?.pending_changes ?? 0 })}
@@ -302,8 +365,15 @@ export default function ShiftsPage() {
         />
       )}
 
-      {publishOpen && roster && (
-        <PublishDialog roster={roster} publishing={busy} onConfirm={publish} onClose={() => setPublishOpen(false)} />
+      {publishOpen && publishRoster && (
+        <PublishDialog
+          roster={publishRoster}
+          publishing={busy}
+          requireAck={requireAck}
+          error={publishError}
+          onConfirm={publish}
+          onClose={closePublish}
+        />
       )}
 
       {copyOpen && (

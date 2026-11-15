@@ -7,17 +7,21 @@ import type { Roster } from "@/lib/api-client";
 interface PublishDialogProps {
   roster: Roster;
   publishing: boolean;
+  /** Set when publish returned 409 even though this roster listed no warnings. */
+  requireAck?: boolean;
+  error?: string | null;
   onConfirm: (opts: { acknowledge_warnings: boolean; notify: boolean }) => void;
   onClose: () => void;
 }
 
-export default function PublishDialog({ roster, publishing, onConfirm, onClose }: PublishDialogProps) {
+export default function PublishDialog({ roster, publishing, requireAck = false, error, onConfirm, onClose }: PublishDialogProps) {
   const t = useTranslations("shifts");
   const tc = useTranslations("common");
   const [acknowledged, setAcknowledged] = useState(false);
   const [notify, setNotify] = useState(true);
   const names = new Map(roster.workers.map((w) => [w.id, `${w.first_name} ${w.last_name}`]));
   const hasWarnings = roster.warnings.length > 0;
+  const mustAck = hasWarnings || requireAck;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-label={t("publishTitle")}>
@@ -38,11 +42,16 @@ export default function PublishDialog({ roster, publishing, onConfirm, onClose }
                 </li>
               ))}
             </ul>
-            <label className="flex items-center gap-2 mt-3 text-sm text-foreground">
-              <input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} />
-              {t("acknowledgeWarnings")}
-            </label>
           </div>
+        )}
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {mustAck && (
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} />
+            {t("acknowledgeWarnings")}
+          </label>
         )}
 
         <label className="flex items-center gap-2 text-sm text-foreground">
@@ -57,7 +66,7 @@ export default function PublishDialog({ roster, publishing, onConfirm, onClose }
           <button
             type="button"
             onClick={() => onConfirm({ acknowledge_warnings: acknowledged, notify })}
-            disabled={publishing || (hasWarnings && !acknowledged)}
+            disabled={publishing || (mustAck && !acknowledged)}
             className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:opacity-90 disabled:opacity-50"
           >
             {t("publishConfirm")}

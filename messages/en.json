@@ -701,7 +701,7 @@
     "toolEdit": "Edit cell",
     "toolErase": "Erase",
     "copyPrevious": "Copy previous week",
-    "copyHelp": "Copies the draft of the previous week into the shown week. Choose what to do with cells that already have shifts.",
+    "copyHelp": "Copies the whole company, not only the filtered work center. If the source cell is empty, overwrite clears it. Choose what to do with cells that already have shifts.",
     "copySkip": "Keep cells that already have shifts",
     "copyOverwrite": "Overwrite existing cells",
     "copied": "Copied {copied} cells, skipped {skipped}.",

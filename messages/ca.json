@@ -701,7 +701,7 @@
     "toolEdit": "Edita cel·la",
     "toolErase": "Esborra",
     "copyPrevious": "Copia la setmana anterior",
-    "copyHelp": "Copia l'esborrany de la setmana anterior a la setmana mostrada. Tria què fer amb les cel·les que ja tenen torns.",
+    "copyHelp": "Copia tota l'empresa, no només el centre filtrat. Si l'origen és buit, sobreescriure deixa la cel·la sense torns. Tria què fer amb les cel·les que ja tenen torns.",
     "copySkip": "Respecta les cel·les que ja tenen torns",
     "copyOverwrite": "Sobreescriu les cel·les existents",
     "copied": "Copiades {copied} cel·les, omeses {skipped}.",

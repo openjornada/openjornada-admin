@@ -701,7 +701,7 @@
     "toolEdit": "Editar celda",
     "toolErase": "Borrar",
     "copyPrevious": "Copiar semana anterior",
-    "copyHelp": "Copia el borrador de la semana anterior a la semana mostrada. Elige qué hacer con las celdas que ya tienen turnos.",
+    "copyHelp": "Copia el borrador de toda la empresa, no solo del centro filtrado. Si el origen está vacío, sobrescribir deja la celda sin turnos. Elige qué hacer con las celdas que ya tienen turnos.",
     "copySkip": "Respetar las celdas que ya tienen turnos",
     "copyOverwrite": "Sobrescribir las celdas existentes",
     "copied": "Copiadas {copied} celdas, omitidas {skipped}.",

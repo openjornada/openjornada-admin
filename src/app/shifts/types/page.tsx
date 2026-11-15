@@ -90,7 +90,14 @@ export default function ShiftTypesPage() {
 
         <div className="bg-card border border-border rounded-lg p-4 mb-6 flex flex-wrap items-end gap-4">
           <div className="max-w-sm flex-1 min-w-[220px]">
-            <EnabledCompanySelect module="shift" value={companyId} onChange={setCompanyId} />
+            <EnabledCompanySelect
+              module="shift"
+              value={companyId}
+              onChange={(id) => {
+                setCompanyId(id);
+                setForm(null);
+              }}
+            />
           </div>
           {companyId && (
             <button
