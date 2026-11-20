@@ -105,7 +105,8 @@
     "reports": "Informes",
     "absences": "Ausencias y vacaciones",
     "settings": "Configuración",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "shifts": "Turnos"
   },
   "topnav": {
     "notifications": "Notificaciones",
@@ -345,7 +346,9 @@
     "absenceModule": "Habilitar gestión de vacaciones",
     "absenceModuleHelp": "Activa el módulo de ausencias y vacaciones (solicitudes, calendario y saldo) para esta empresa.",
     "notifLangLabel": "Idioma de notificaciones",
-    "notifLangHelp": "Idioma en el que esta empresa envía emails y SMS a sus trabajadores. Independiente del idioma de la interfaz del administrador."
+    "notifLangHelp": "Idioma en el que esta empresa envía emails y SMS a sus trabajadores. Independiente del idioma de la interfaz del administrador.",
+    "shiftModule": "Habilitar planificación de turnos",
+    "shiftModuleHelp": "Activa el cuadrante de turnos (tipos de turno, planificación semanal y publicación a los trabajadores) para esta empresa."
   },
   "workCenters": {
     "title": "Centros de trabajo",
@@ -658,6 +661,73 @@
       "Sáb",
       "Dom"
     ]
+  },
+  "shifts": {
+    "noEnabledCompany": "Ninguna empresa tiene activada la planificación de turnos.",
+    "enableInCompany": "Actívala en la ficha de la empresa",
+    "worker": "Trabajador",
+    "total": "Total",
+    "overnight": "turno nocturno",
+    "absent": "Ausente",
+    "hasWarnings": "Avisos en esta celda",
+    "warning": {
+      "rest_under_12h": "Menos de 12 horas de descanso entre jornadas",
+      "absence_overlap": "Turno sobre una ausencia aprobada"
+    },
+    "emptyDay": "Sin turnos este día.",
+    "type": "Tipo",
+    "custom": "Personalizado",
+    "start": "Inicio",
+    "end": "Fin",
+    "breakMinutes": "Descanso (min)",
+    "addShift": "Añadir turno",
+    "publishTitle": "Publicar cuadrante",
+    "publishSummary": "{count, plural, one {# cambio pendiente} other {# cambios pendientes}} entre {start} y {end}.",
+    "publishWholeCompany": "Se publica toda la empresa en este rango, aunque haya un filtro por centro de trabajo.",
+    "publishWarnings": "{count, plural, one {Hay # aviso} other {Hay # avisos}} en el cuadrante:",
+    "acknowledgeWarnings": "Entiendo los avisos y quiero publicar igualmente",
+    "notifyByEmail": "Avisar por correo",
+    "publishConfirm": "Publicar",
+    "title": "Cuadrante de turnos",
+    "subtitle": "Planifica los turnos semanales y publícalos a los trabajadores",
+    "manageTypes": "Tipos de turno",
+    "loadError": "Error al cargar el cuadrante",
+    "saveError": "Error al guardar el turno",
+    "workCenter": "Centro de trabajo",
+    "week": "Semana",
+    "month": "Mes",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "toolEdit": "Editar celda",
+    "toolErase": "Borrar",
+    "copyPrevious": "Copiar semana anterior",
+    "copyHelp": "Copia el borrador de toda la empresa, no solo del centro filtrado. Si el origen está vacío, sobrescribir deja la celda sin turnos. Elige qué hacer con las celdas que ya tienen turnos.",
+    "copySkip": "Respetar las celdas que ya tienen turnos",
+    "copyOverwrite": "Sobrescribir las celdas existentes",
+    "copied": "Copiadas {copied} celdas, omitidas {skipped}.",
+    "copyError": "Error al copiar la semana",
+    "publish": "Publicar ({count})",
+    "published": "Publicado: {count} celdas con cambios.",
+    "publishError": "Error al publicar",
+    "monthReadOnly": "Vista mensual de solo lectura. Cambia a la vista semanal para editar.",
+    "loading": "Cargando cuadrante...",
+    "limits": "El cuadrante avisa de descansos inferiores a 12 horas y de turnos sobre ausencias aprobadas. No detecta exceso de horas ni festivos.",
+    "backToShifts": "Volver al cuadrante",
+    "typesTitle": "Tipos de turno",
+    "typesSubtitle": "Plantillas de turno que se asignan con un clic en el cuadrante",
+    "newType": "Nuevo tipo",
+    "typeSaved": "Tipo de turno guardado",
+    "typeSaveError": "Error al guardar el tipo de turno",
+    "typeDeleted": "Tipo de turno eliminado",
+    "typeDeleteError": "Error al eliminar el tipo de turno",
+    "confirmDeleteType": "¿Eliminar el tipo «{name}»? Los turnos ya asignados no cambian.",
+    "shortCode": "Abreviatura",
+    "color": "Color",
+    "preview": "Vista previa",
+    "hours": "Horario",
+    "noTypes": "Todavía no hay tipos de turno.",
+    "pendingChange": "Cambio sin publicar",
+    "today": "Hoy"
   },
   "absencePolicy": {
     "title": "Política de Ausencias y Vacaciones",
@@ -1227,6 +1297,21 @@
       "log_not_found": "El registro SMS no se encontró.",
       "invalid_locale": "El idioma de la plantilla no está soportado.",
       "template_exceeds_segment": "La plantilla no cabe en un único SMS (160 caracteres GSM-7, 70 si usas caracteres fuera de ese alfabeto)."
+    },
+    "shift_plan": {
+      "company_not_found": "La empresa no existe.",
+      "module_disabled": "La planificación de turnos no está activada para esta empresa.",
+      "shift_type_not_found": "El tipo de turno no existe.",
+      "worker_not_found": "El trabajador no existe o no pertenece a la empresa.",
+      "overlap": "Los turnos se solapan entre sí o con un turno nocturno del día anterior.",
+      "warnings_not_acknowledged": "Hay avisos en el cuadrante: confírmalos para publicar.",
+      "range_too_long": "El rango es demasiado largo (máximo 42 días).",
+      "invalid_range": "El rango de fechas no es válido.",
+      "overlapping_weeks": "La semana de origen y la de destino se solapan.",
+      "too_many_shifts": "Demasiados turnos en un día (máximo 10).",
+      "incomplete_shift": "Cada turno necesita un tipo o una hora de inicio y de fin.",
+      "invalid_time_range": "El horario del turno no es válido.",
+      "invalid_break": "El descanso no es válido."
     }
   }
 }

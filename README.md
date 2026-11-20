@@ -31,6 +31,11 @@ Panel de administración web para OpenJornada - Sistema de gestión de registros
   - Calendario de equipo para ver quién está fuera y descarga de justificantes
   - Configuración de la política y su catálogo de tipos de ausencia
   - Casilla "Habilitar gestión de vacaciones" en la ficha de empresa
+- **Planificación de turnos**: Cuadrante semanal por empresa (módulo opcional por empresa)
+  - Tipos de turno (abreviatura, color, horario y descanso) y rejilla de lunes a domingo con asignación con un clic, horas personalizadas, segundo turno y borrado
+  - Avisos de descanso inferior a 12 h y de turnos sobre ausencias aprobadas, total de horas por trabajador y filtro por centro de trabajo
+  - Copia de la semana anterior, vista mensual de solo lectura y publicación a los trabajadores (con aviso por correo opcional)
+  - Casilla "Habilitar planificación de turnos" en la ficha de empresa
 - **Centros de trabajo**: Gestión de centros como subdivisión de una empresa
   - CRUD de centros (nombre, código, dirección) con filtro por empresa
   - Asignación opcional de cada trabajador a un centro por empresa
@@ -308,6 +313,11 @@ El diseño utiliza los mismos colores que la landing page de OpenJornada:
 - `PATCH /api/absences/{id}` - Aprobar/rechazar solicitud
 - `GET /api/absences/calendar` - Calendario de equipo (vista admin)
 - `GET /api/absences/attachments/{attachment_id}` - Descargar justificante
+- `GET|POST /api/shift-types`, `PUT|DELETE /api/shift-types/{id}` - Tipos de turno de la empresa
+- `GET /api/shift-plans` - Cuadrante de un rango (máximo 42 días) con avisos y cambios pendientes
+- `PUT /api/shift-plans/cell` - Reemplazar los turnos de una celda (trabajador y día)
+- `POST /api/shift-plans/copy-week` - Copiar una semana a otra (`skip` u `overwrite`)
+- `POST /api/shift-plans/publish` - Publicar el rango a los trabajadores
 
 ## Desarrollo
 

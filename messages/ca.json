@@ -105,7 +105,8 @@
     "absences": "Absències i vacances",
     "settings": "Configuració",
     "logout": "Tancar Sessió",
-    "workers": "Treballadors"
+    "workers": "Treballadors",
+    "shifts": "Torns"
   },
   "topnav": {
     "notifications": "Notificacions",
@@ -345,7 +346,9 @@
     "absenceModule": "Habilitar gestió de vacances",
     "absenceModuleHelp": "Activa el mòdul d'absències i vacances (sol·licituds, calendari i saldo) per a aquesta empresa.",
     "notifLangLabel": "Idioma de notificacions",
-    "notifLangHelp": "Idioma en què aquesta empresa envia correus i SMS als seus treballadors. Independent de l'idioma de la interfície de l'administrador."
+    "notifLangHelp": "Idioma en què aquesta empresa envia correus i SMS als seus treballadors. Independent de l'idioma de la interfície de l'administrador.",
+    "shiftModule": "Habilita la planificació de torns",
+    "shiftModuleHelp": "Activa el quadrant de torns (tipus de torn, planificació setmanal i publicació als treballadors) per a aquesta empresa."
   },
   "workCenters": {
     "title": "Centres de treball",
@@ -658,6 +661,73 @@
       "ds",
       "dg"
     ]
+  },
+  "shifts": {
+    "noEnabledCompany": "Cap empresa té activada la planificació de torns.",
+    "enableInCompany": "Activa-la a la fitxa de l'empresa",
+    "worker": "Treballador",
+    "total": "Total",
+    "overnight": "torn nocturn",
+    "absent": "Absent",
+    "hasWarnings": "Avisos en aquesta cel·la",
+    "warning": {
+      "rest_under_12h": "Menys de 12 hores de descans entre jornades",
+      "absence_overlap": "Torn sobre una absència aprovada"
+    },
+    "emptyDay": "Sense torns aquest dia.",
+    "type": "Tipus",
+    "custom": "Personalitzat",
+    "start": "Inici",
+    "end": "Fi",
+    "breakMinutes": "Descans (min)",
+    "addShift": "Afegeix torn",
+    "publishTitle": "Publica el quadrant",
+    "publishSummary": "{count, plural, one {# canvi pendent} other {# canvis pendents}} entre {start} i {end}.",
+    "publishWholeCompany": "Es publica tota l'empresa en aquest rang, encara que hi hagi un filtre per centre de treball.",
+    "publishWarnings": "{count, plural, one {Hi ha # avís} other {Hi ha # avisos}} al quadrant:",
+    "acknowledgeWarnings": "Entenc els avisos i vull publicar igualment",
+    "notifyByEmail": "Avisa per correu",
+    "publishConfirm": "Publica",
+    "title": "Quadrant de torns",
+    "subtitle": "Planifica els torns setmanals i publica'ls als treballadors",
+    "manageTypes": "Tipus de torn",
+    "loadError": "Error en carregar el quadrant",
+    "saveError": "Error en desar el torn",
+    "workCenter": "Centre de treball",
+    "week": "Setmana",
+    "month": "Mes",
+    "prev": "Anterior",
+    "next": "Següent",
+    "toolEdit": "Edita cel·la",
+    "toolErase": "Esborra",
+    "copyPrevious": "Copia la setmana anterior",
+    "copyHelp": "Copia tota l'empresa, no només el centre filtrat. Si l'origen és buit, sobreescriure deixa la cel·la sense torns. Tria què fer amb les cel·les que ja tenen torns.",
+    "copySkip": "Respecta les cel·les que ja tenen torns",
+    "copyOverwrite": "Sobreescriu les cel·les existents",
+    "copied": "Copiades {copied} cel·les, omeses {skipped}.",
+    "copyError": "Error en copiar la setmana",
+    "publish": "Publica ({count})",
+    "published": "Publicat: {count} cel·les amb canvis.",
+    "publishError": "Error en publicar",
+    "monthReadOnly": "Vista mensual de només lectura. Canvia a la vista setmanal per editar.",
+    "loading": "Carregant quadrant...",
+    "limits": "El quadrant avisa de descansos inferiors a 12 hores i de torns sobre absències aprovades. No detecta excés d'hores ni festius.",
+    "backToShifts": "Torna al quadrant",
+    "typesTitle": "Tipus de torn",
+    "typesSubtitle": "Plantilles de torn que s'assignen amb un clic al quadrant",
+    "newType": "Nou tipus",
+    "typeSaved": "Tipus de torn desat",
+    "typeSaveError": "Error en desar el tipus de torn",
+    "typeDeleted": "Tipus de torn eliminat",
+    "typeDeleteError": "Error en eliminar el tipus de torn",
+    "confirmDeleteType": "Vols eliminar el tipus «{name}»? Els torns ja assignats no canvien.",
+    "shortCode": "Abreviatura",
+    "color": "Color",
+    "preview": "Vista prèvia",
+    "hours": "Horari",
+    "noTypes": "Encara no hi ha tipus de torn.",
+    "pendingChange": "Canvi sense publicar",
+    "today": "Avui"
   },
   "absencePolicy": {
     "title": "Política d'Absències i Vacances",
@@ -1227,6 +1297,21 @@
       "log_not_found": "El registre SMS no s'ha trobat.",
       "invalid_locale": "L'idioma de la plantilla no està suportat.",
       "template_exceeds_segment": "La plantilla no cap en un únic SMS (160 caràcters GSM-7, 70 si utilitzes caràcters fora d'aquest alfabet)."
+    },
+    "shift_plan": {
+      "company_not_found": "L'empresa no existeix.",
+      "module_disabled": "La planificació de torns no està activada per a aquesta empresa.",
+      "shift_type_not_found": "El tipus de torn no existeix.",
+      "worker_not_found": "El treballador no existeix o no pertany a l'empresa.",
+      "overlap": "Els torns se solapen entre ells o amb un torn nocturn del dia anterior.",
+      "warnings_not_acknowledged": "Hi ha avisos al quadrant: confirma'ls per publicar.",
+      "range_too_long": "El rang és massa llarg (màxim 42 dies).",
+      "invalid_range": "El rang de dates no és vàlid.",
+      "overlapping_weeks": "La setmana d'origen i la de destinació se solapen.",
+      "too_many_shifts": "Massa torns en un dia (màxim 10).",
+      "incomplete_shift": "Cada torn necessita un tipus o una hora d'inici i de fi.",
+      "invalid_time_range": "L'horari del torn no és vàlid.",
+      "invalid_break": "El descans no és vàlid."
     }
   }
 }

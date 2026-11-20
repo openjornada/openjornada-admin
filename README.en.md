@@ -31,6 +31,11 @@ Web administration panel for OpenJornada - A work time tracking and management s
   - Team calendar to see who is out and supporting-document download
   - Policy configuration and its absence-type catalog
   - "Enable leave management" checkbox in the company profile
+- **Shift planning**: Weekly roster per company (optional per-company module)
+  - Shift types (short code, color, hours and break) and a Monday-to-Sunday grid with one-click assignment, custom hours, a second shift and erase
+  - Warnings for rest under 12 h and shifts on approved absences, planned hours per worker and work center filter
+  - Copy previous week, read-only month view and publishing to workers (optional email notice)
+  - "Enable shift planning" checkbox in the company form
 - **Work centers**: Manage centers as a subdivision of a company
   - Center CRUD (name, code, address) with company filter
   - Optional per-company assignment of each worker to a center
@@ -308,6 +313,11 @@ The design uses the same colors as the OpenJornada landing page:
 - `PATCH /api/absences/{id}` - Approve/reject request
 - `GET /api/absences/calendar` - Team calendar (admin view)
 - `GET /api/absences/attachments/{attachment_id}` - Download supporting document
+- `GET|POST /api/shift-types`, `PUT|DELETE /api/shift-types/{id}` - Company shift types
+- `GET /api/shift-plans` - Roster for a range (max 42 days) with warnings and pending changes
+- `PUT /api/shift-plans/cell` - Replace the shifts of one cell (worker and day)
+- `POST /api/shift-plans/copy-week` - Copy one week into another (`skip` or `overwrite`)
+- `POST /api/shift-plans/publish` - Publish the range to workers
 
 ## Development
 
